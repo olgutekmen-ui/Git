@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v3.5.1 Mobile Fit)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v4.0 Controls)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #050510; font-family: 'Courier New', Courier, monospace; color: white; user-select: none; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
@@ -13,7 +13,7 @@
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
             background-size: 100% 4px;
         }
-        
+
         #damage-flash {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: red; opacity: 0; pointer-events: none; z-index: 18; transition: opacity 0.1s;
@@ -42,6 +42,36 @@
             text-shadow: 0 0 20px currentColor; opacity: 0; transition: opacity 0.5s;
             pointer-events: none; z-index: 15; width: 100%;
         }
+
+        /* --- TOUCH CONTROLS (D-PAD) --- */
+        #controls-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; display: none;
+        }
+        .control-btn {
+            position: absolute; width: 80px; height: 80px;
+            background: rgba(0, 255, 255, 0.1); border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 50%; pointer-events: auto; display: flex;
+            align-items: center; justify-content: center; font-size: 30px; color: rgba(0, 255, 255, 0.8);
+            user-select: none; -webkit-user-select: none;
+        }
+        .control-btn:active { background: rgba(0, 255, 255, 0.4); transform: scale(0.95); }
+        
+        #btn-left { bottom: 30px; left: 20px; }
+        #btn-right { bottom: 30px; left: 120px; }
+        #btn-jump { bottom: 120px; right: 20px; border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
+        #btn-slide { bottom: 30px; right: 20px; border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); }
+
+        /* Ability button moves up if controls are active */
+        #ability-btn {
+            position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px;
+            border-radius: 50%; border: 3px solid #ffd700; background: rgba(255, 215, 0, 0.2);
+            color: #ffd700; font-weight: bold; font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; cursor: pointer; pointer-events: auto;
+            box-shadow: 0 0 20px #ffd700; animation: pulse 1s infinite;
+            z-index: 20;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px #ffd700; } 50% { box-shadow: 0 0 30px #ffd700; } 100% { box-shadow: 0 0 10px #ffd700; } }
         
         .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 16, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; pointer-events: auto; overflow-y: auto; }
         h1 { font-size: 40px; color: #00ffff; margin-bottom: 5px; text-shadow: 0 0 20px #00ffff; text-transform: uppercase; letter-spacing: 5px; text-align: center; }
@@ -65,6 +95,16 @@
         button:hover { background: #d000d0; transform: scale(1.05); }
         button:disabled { background: #555; cursor: not-allowed; filter: grayscale(100%); }
 
+        /* CONTROL TOGGLE */
+        .control-toggle {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .toggle-btn {
+            padding: 10px 20px; border: 1px solid #555; background: rgba(0,0,0,0.5); color: #888;
+            cursor: pointer; font-weight: bold;
+        }
+        .toggle-btn.active { border-color: #00ffff; color: #00ffff; background: rgba(0, 255, 255, 0.1); }
+
         /* RESPONSIVE TUTORIAL */
         #tutorial-layer { background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 30; }
         .tut-card { 
@@ -84,17 +124,6 @@
         .flow-active #multiplier-display { color: #ffd700; text-shadow: 0 0 20px #ffd700; transform: scale(1.2); }
         #beat-bar { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.1); transition: transform 0.05s; }
         .beat-hit { border-color: #00ffff !important; transform: translateX(-50%) scale(1.4) !important; box-shadow: 0 0 40px cyan; background: rgba(0, 255, 255, 0.3); }
-        
-        #ability-btn {
-            position: absolute; bottom: 40px; right: 30px; width: 80px; height: 80px;
-            border-radius: 50%; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.2);
-            color: #00ff00; font-weight: bold; font-size: 14px;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center; cursor: pointer; pointer-events: auto;
-            box-shadow: 0 0 20px #00ff00; animation: pulse 1s infinite;
-            z-index: 20;
-        }
-        @keyframes pulse { 0% { box-shadow: 0 0 10px #00ff00; } 50% { box-shadow: 0 0 30px #00ff00; } 100% { box-shadow: 0 0 10px #00ff00; } }
     </style>
 </head>
 <body>
@@ -115,16 +144,23 @@
         <div id="multiplier-display">x1.0</div>
         <div id="beat-bar"></div>
         <div id="district-announcer">DISTRICT 1</div>
-        <div id="ability-btn" style="display:none;" onclick="triggerShield()">SHIELD<br>READY<br>[SPACE]</div>
+        <div id="ability-btn" style="display:none;" onclick="triggerShield()">SHIELD<br>READY</div>
+    </div>
+
+    <div id="controls-layer">
+        <div id="btn-left" class="control-btn">⬅</div>
+        <div id="btn-right" class="control-btn">➡</div>
+        <div id="btn-jump" class="control-btn">⬆</div>
+        <div id="btn-slide" class="control-btn">⬇</div>
     </div>
 
     <div id="tutorial-layer" class="menu-overlay">
         <div class="tut-card">
             <h2 style="margin-top:0;">TRAINING PROTOCOL</h2>
-            <div class="tut-row"><div class="tut-icon">⬅️➡️</div> <div>SWIPE to Dodge Enemies</div></div>
-            <div class="tut-row"><div class="tut-icon">⬆️</div> <div>SWIPE UP to Jump <span style="color:#ff5500">Red Beams</span></div></div>
-            <div class="tut-row"><div class="tut-icon">⬇️</div> <div>SWIPE DOWN to Slide <span style="color:#cc00ff">Purple Beams</span></div></div>
-            <div class="tut-row"><div class="tut-icon">🚫</div> <div>Avoid Enemies (Tall Walls)</div></div>
+            <div class="tut-row"><div class="tut-icon">⬅️➡️</div> <div>Dodge Enemies</div></div>
+            <div class="tut-row"><div class="tut-icon">⬆️</div> <div>Jump <span style="color:#ff5500">Red Beams</span></div></div>
+            <div class="tut-row"><div class="tut-icon">⬇️</div> <div>Slide <span style="color:#cc00ff">Purple Beams</span></div></div>
+            <div class="tut-row"><div class="tut-icon">🚫</div> <div>Avoid Enemies (Walls)</div></div>
             <button onclick="closeTutorial()">I'M READY</button>
         </div>
     </div>
@@ -133,10 +169,17 @@
         <h1>VYRA: NEO-SEOUL</h1>
         <div id="loading-area"><p id="loading-text" style="color:#00ffff;">SYSTEM INITIALIZING...</p></div>
         <div id="shop-area" style="display:none; width: 100%; display:flex; flex-direction:column; align-items:center;">
+            
+            <div class="control-toggle">
+                <div id="toggle-swipe" class="toggle-btn active" onclick="Economy.setControls('SWIPE')">SWIPE</div>
+                <div id="toggle-buttons" class="toggle-btn" onclick="Economy.setControls('BUTTONS')">BUTTONS</div>
+            </div>
+
             <h2>
                 <img src="assets/images/aurum.png" class="currency-icon" style="margin:0 10px;"> 
                 <span id="menu-wallet" style="color:#ffd700">0</span>
             </h2>
+            
             <h3>GEAR UPGRADES</h3>
             <div class="shop-container">
                 <div class="shop-item" id="btn-shield">
@@ -189,13 +232,12 @@
     const State = {
         isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runAurum: 0,
-        LANE_WIDTH_BASE: 0, // Calculated dynamically
-        PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
         
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
-        currentDistrict: 0, lastSpawnHeavy: false,
+        currentDistrict: 0,
         districts: [
             { name: "NEO-CORE", color: "#c000ff", sky: "rgba(0,0,50,0.4)" }, 
             { name: "SECTOR-9", color: "#ffaa00", sky: "rgba(50,20,0,0.4)" }, 
@@ -203,9 +245,9 @@
         ]
     };
 
-    // --- 2. ECONOMY ---
+    // --- 2. ECONOMY & SETTINGS ---
     const Economy = {
-        data: { aurum: 50, unlockedTrail: false, tutorialSeen: false },
+        data: { aurum: 50, unlockedTrail: false, tutorialSeen: false, controlMode: 'SWIPE' },
         init() {
             try {
                 const saved = localStorage.getItem('vyraData');
@@ -215,19 +257,28 @@
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
         resetSave() { 
-            if(confirm("⚠ WARNING: This will delete ALL progress, unlocks, and currency. Are you sure?")) {
-                this.data = { aurum: 50, unlockedTrail: false, tutorialSeen: false }; 
+            if(confirm("⚠ WARNING: This will delete ALL progress. Are you sure?")) {
+                this.data = { aurum: 50, unlockedTrail: false, tutorialSeen: false, controlMode: 'SWIPE' }; 
                 this.save(); 
                 alert("Data Reset.");
             }
+        },
+        setControls(mode) {
+            this.data.controlMode = mode;
+            this.save();
         },
         updateUI() {
             const walletEl = document.getElementById('menu-wallet');
             if(walletEl) walletEl.innerText = this.data.aurum;
             const hudWallet = document.getElementById('hud-wallet-val');
             if(hudWallet) hudWallet.innerText = State.runAurum; 
+            
             this.updateButton('price-shield', 100, false, "EQUIPPED", State.activeBoosts.shield);
             this.updateButton('price-trail', 500, this.data.unlockedTrail, "OWNED", false);
+            
+            // Toggle Logic
+            document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('toggle-buttons').className = this.data.controlMode === 'BUTTONS' ? 'toggle-btn active' : 'toggle-btn';
         },
         updateButton(id, cost, isOwned, ownedText, isEquipped) {
             const el = document.getElementById(id); if(!el) return;
@@ -334,6 +385,12 @@
         document.getElementById('btn-trail').addEventListener('click', () => Economy.buyTrail());
         document.getElementById('reset-save-btn').addEventListener('click', () => Economy.resetSave());
 
+        // Button Controls
+        document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); changeLane(-1); });
+        document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); changeLane(1); });
+        document.getElementById('btn-jump').addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
+        document.getElementById('btn-slide').addEventListener('touchstart', (e) => { e.preventDefault(); doSlide(); });
+
         loadGameAssets(() => {
             document.getElementById('loading-area').style.display = 'none';
             document.getElementById('shop-area').style.display = 'flex';
@@ -363,6 +420,13 @@
         document.getElementById('gameover-layer').style.display = 'none';
         document.getElementById('hud-layer').classList.add('visible');
         
+        // Show Buttons if Selected
+        if(Economy.data.controlMode === 'BUTTONS') {
+            document.getElementById('controls-layer').style.display = 'block';
+        } else {
+            document.getElementById('controls-layer').style.display = 'none';
+        }
+
         State.isPlaying = true;
         AudioSys.init();
         AudioSys.startMusic();
@@ -550,6 +614,7 @@
         Economy.save();
         document.getElementById('hud-layer').classList.remove('visible');
         document.getElementById('gameover-layer').style.display = 'flex';
+        document.getElementById('controls-layer').style.display = 'none';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#ffd700">COLLECTED: ${State.runAurum} </span> <img src="assets/images/aurum.png" style="width:20px;vertical-align:middle;">`;
     }
 
@@ -559,6 +624,7 @@
         Economy.updateUI();
     }
 
+    // --- PATTERN SPAWNER (v3.4) ---
     function triggerBeat() {
         const beatBar = document.getElementById('beat-bar');
         if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
@@ -577,7 +643,7 @@
         let lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
         let count = Math.min(maxCount, (Math.random() < 0.5 ? 1 : 2)); 
         
-        // V3.4 PATTERNS
+        // V3.4 PATTERNS RE-INTEGRATED
         let patternRoll = Math.random();
         
         if (patternRoll < 0.2) {
@@ -622,11 +688,19 @@
                 case 'ArrowDown': case 's': case 'S': doSlide(); break;
             }
         });
+        
+        // SWIPE LOGIC
         let tsX=0, tsY=0;
-        document.addEventListener('touchstart', e => { tsX = e.changedTouches[0].screenX; tsY = e.changedTouches[0].screenY; }, {passive:false});
+        document.addEventListener('touchstart', e => { 
+            tsX = e.changedTouches[0].screenX; tsY = e.changedTouches[0].screenY; 
+        }, {passive:false});
+        
         document.addEventListener('touchend', e => {
-            let teX = e.changedTouches[0].screenX; let teY = e.changedTouches[0].screenY;
             if (!State.isPlaying) return;
+            // IGNORE IF TAPPING BUTTONS
+            if (e.target.classList.contains('control-btn')) return;
+
+            let teX = e.changedTouches[0].screenX; let teY = e.changedTouches[0].screenY;
             let dx = teX - tsX; let dy = teY - tsY;
             if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > 30) changeLane(dx > 0 ? 1 : -1); }
             else { if (Math.abs(dy) > 30) { if (dy > 0) doSlide(); else doJump(); } }
@@ -709,7 +783,6 @@
             let groundY = horizonY + ((canvas.height - horizonY) * scale);
             let size = 100 * scale;
             
-            // Shadows
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.beginPath(); ctx.ellipse(screenX, groundY, size * 0.8, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
             
@@ -752,8 +825,7 @@
                     ctx.save(); ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10;
                     ctx.drawImage(enemyImg, screenX - size/2, drawY, size, size); ctx.restore();
                 } else { ctx.fillStyle = '#ff0000'; ctx.fillRect(screenX - size/2, drawY, size, size); }
-                
-                // TALL LASER WARNING
+                // TALL WARNING
                 ctx.fillStyle = 'rgba(255,0,0,0.3)';
                 ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3); 
             }
