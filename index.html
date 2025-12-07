@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (GOLD v3.5)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v3.5.1 Mobile Fit)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #050510; font-family: 'Courier New', Courier, monospace; color: white; user-select: none; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
@@ -14,7 +14,6 @@
             background-size: 100% 4px;
         }
         
-        /* DAMAGE FLASH OVERLAY */
         #damage-flash {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: red; opacity: 0; pointer-events: none; z-index: 18; transition: opacity 0.1s;
@@ -190,12 +189,13 @@
     const State = {
         isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runAurum: 0,
-        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 0, // Calculated dynamically
+        PLAYER_Z_DEPTH: 100,
         
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
-        currentDistrict: 0,
+        currentDistrict: 0, lastSpawnHeavy: false,
         districts: [
             { name: "NEO-CORE", color: "#c000ff", sky: "rgba(0,0,50,0.4)" }, 
             { name: "SECTOR-9", color: "#ffaa00", sky: "rgba(50,20,0,0.4)" }, 
@@ -214,8 +214,6 @@
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        
-        // V3.5 FIX: SAFETY CHECK
         resetSave() { 
             if(confirm("⚠ WARNING: This will delete ALL progress, unlocks, and currency. Are you sure?")) {
                 this.data = { aurum: 50, unlockedTrail: false, tutorialSeen: false }; 
@@ -223,7 +221,6 @@
                 alert("Data Reset.");
             }
         },
-        
         updateUI() {
             const walletEl = document.getElementById('menu-wallet');
             if(walletEl) walletEl.innerText = this.data.aurum;
@@ -513,7 +510,7 @@
         spawnFloatingText("CRASH!", "#ff0000"); 
         AudioSys.playCrash();
         
-        // V3.5 FIX: VISUAL DAMAGE FLASH
+        // DAMAGE FLASH
         const flash = document.getElementById('damage-flash');
         flash.style.opacity = 0.5;
         setTimeout(() => flash.style.opacity = 0, 100);
@@ -572,6 +569,7 @@
         
         if (Math.random() > currentRate) return; 
 
+        // FAIRNESS ALGORITHM
         let maxCount = 2;
         if (State.lastSpawnHeavy) { maxCount = 1; State.lastSpawnHeavy = false; }
         else { if (Math.random() < 0.4) { maxCount = 2; State.lastSpawnHeavy = true; } else { maxCount = 1; } }
@@ -579,20 +577,28 @@
         let lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
         let count = Math.min(maxCount, (Math.random() < 0.5 ? 1 : 2)); 
         
-        // V3.4 PATTERNS RE-INTEGRATED
+        // V3.4 PATTERNS
         let patternRoll = Math.random();
         
         if (patternRoll < 0.2) {
-            // LURE PATTERN
+            // LURE PATTERN (Coin -> Enemy)
             State.obstacles.push({ lane: lanes[0], type: 'ENERGY', subType: 1, z: 1600, hit: false, visible: true });
             State.obstacles.push({ lane: lanes[0], type: 'ENEMY', subType: 1, z: 2000, hit: false, visible: true });
-        } else {
+        } 
+        else if (patternRoll < 0.4) {
+             // COIN CHAIN
+             State.obstacles.push({ lane: lanes[0], type: 'ENERGY', subType: 1, z: 2000, hit: false, visible: true });
+             State.obstacles.push({ lane: lanes[0], type: 'ENERGY', subType: 1, z: 2200, hit: false, visible: true });
+             State.obstacles.push({ lane: lanes[0], type: 'ENERGY', subType: 1, z: 2400, hit: false, visible: true });
+        }
+        else {
             // STANDARD RANDOM
             for (let i = 0; i < count; i++) {
                 let r = Math.random();
                 let type = 'ENEMY';
                 let subType = 1;
-                if (r < 0.3) { type = 'ENERGY'; } // Increased energy chance
+                
+                if (r < 0.3) { type = 'ENERGY'; } // Higher coin rate
                 else if (r < 0.5) { type = 'LOW_BEAM'; } 
                 else if (r < 0.7) { type = 'HIGH_BEAM'; } 
                 else { type = 'ENEMY'; subType = Math.floor(Math.random()*4)+1; } 
@@ -657,6 +663,9 @@
         let maxDepthHeight = canvas.height - horizonY;
         let targetScale = (playerScreenY - horizonY) / maxDepthHeight;
         State.PLAYER_Z_DEPTH = (500 / targetScale) - 500;
+        
+        // RESPONSIVE LANE WIDTH
+        State.LANE_WIDTH_BASE = Math.min(120, canvas.width / 4.5);
     }
 
     function render() {
@@ -700,6 +709,7 @@
             let groundY = horizonY + ((canvas.height - horizonY) * scale);
             let size = 100 * scale;
             
+            // Shadows
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.beginPath(); ctx.ellipse(screenX, groundY, size * 0.8, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
             
@@ -721,6 +731,7 @@
             } 
             else if (obs.type === 'LOW_BEAM') {
                 let barrierW = size * 1.8;
+                // V3.4: RED COLOR FOR DANGER
                 ctx.fillStyle = '#ff3300'; ctx.shadowColor='#ff3300'; ctx.shadowBlur=30;
                 ctx.fillRect(screenX - barrierW/2, groundY - size/2, barrierW, size/2); 
                 ctx.fillStyle = '#ffaa00'; 
@@ -741,6 +752,8 @@
                     ctx.save(); ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10;
                     ctx.drawImage(enemyImg, screenX - size/2, drawY, size, size); ctx.restore();
                 } else { ctx.fillStyle = '#ff0000'; ctx.fillRect(screenX - size/2, drawY, size, size); }
+                
+                // TALL LASER WARNING
                 ctx.fillStyle = 'rgba(255,0,0,0.3)';
                 ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3); 
             }
