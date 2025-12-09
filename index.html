@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v5.3 Fix)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v5.4 Mobile Fix)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -293,6 +293,7 @@
         },
         close() {
             document.getElementById('leaderboard-layer').style.display='none';
+            // If we came from game over, go back there
             if(this.fromGameOver) {
                 document.getElementById('gameover-layer').style.display='flex';
                 this.fromGameOver = false;
@@ -323,7 +324,8 @@
         isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
-        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 0, // Recalculated in resize()
+        PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
@@ -425,7 +427,7 @@
         const check = () => { Assets.loadedCount++; if (!completed && Assets.loadedCount >= Assets.total) { completed = true; onComplete(); } };
         const loadImg = (key, src) => { Assets.images[key] = new Image(); Assets.images[key].src = src; Assets.images[key].onload = check; Assets.images[key].onerror = check; };
         loadImg('player', 'assets/images/player.png'); loadImg('bg', 'assets/images/bg.png'); 
-        loadImg('energy', 'assets/images/energy.png'); // Soft
+        loadImg('energy', 'assets/images/energy.png'); 
         loadImg('enemy1', 'assets/images/enemy1.jpg'); loadImg('enemy2', 'assets/images/enemy2.jpg'); loadImg('enemy3', 'assets/images/enemy3.jpg'); loadImg('enemy4', 'assets/images/enemy4.jpg');
         loadImg('logo', 'assets/images/LogoSyncStudios.png');
     }
@@ -442,8 +444,7 @@
         Economy.init(); initInput();
 
         document.getElementById('start-btn').addEventListener('click', checkTutorial);
-        
-        // Return button hard-wired in HTML to returnToMenu()
+        // Buttons handled by onclick
         
         const turboBtn = document.getElementById('turbo-btn');
         const startTurbo = (e) => { e.preventDefault(); if(State.isPlaying) { State.isTurbo = true; turboBtn.classList.add('active'); }};
@@ -550,7 +551,6 @@
         State.isPlaying = false; AudioSys.stopMusic(); Leaderboard.lastScore = Math.floor(State.score);
         Economy.data.energy += State.runEnergy; Economy.save();
         document.getElementById('hud-layer').classList.remove('visible'); 
-        // Force hide controls
         document.getElementById('controls-layer').style.display='none';
         document.getElementById('gameover-layer').style.display = 'flex';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
@@ -619,7 +619,8 @@
         let maxDepthHeight = canvas.height - horizonY;
         let targetScale = (playerScreenY - horizonY) / maxDepthHeight;
         State.PLAYER_Z_DEPTH = (500 / targetScale) - 500;
-        if (canvas.width < 600) { State.LANE_WIDTH_BASE = canvas.width / 3.2; } else { State.LANE_WIDTH_BASE = 120; }
+        // IMPROVED CALCULATION FOR NARROW SCREENS (v5.4)
+        if (canvas.width < 600) { State.LANE_WIDTH_BASE = canvas.width / 3.6; } else { State.LANE_WIDTH_BASE = 120; }
     }
 
     function render() {
@@ -654,7 +655,20 @@
             } 
             else if (obs.type === 'LOW_BEAM') { let barrierW = size * 1.8; ctx.fillStyle = '#ff3300'; ctx.shadowColor='#ff3300'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, groundY - size/2, barrierW, size/2); ctx.fillStyle = '#ffaa00'; ctx.fillRect(screenX - barrierW/2 + 5, groundY - size/2 + 5, 5, size/2-10); ctx.fillRect(screenX + barrierW/2 - 10, groundY - size/2 + 5, 5, size/2-10); }
             else if (obs.type === 'HIGH_BEAM') { let beamY = groundY - size * 2.2; let barrierW = size * 2.0; ctx.fillStyle = '#cc00ff'; ctx.shadowColor='#cc00ff'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, beamY, barrierW, size/2); ctx.fillStyle = '#fff'; ctx.fillRect(screenX - barrierW/2, beamY + size/4 - 2, barrierW, 4); }
-            else { let enemyImg = Assets.images['enemy' + obs.subType]; if (enemyImg && enemyImg.complete) { ctx.save(); ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10; ctx.drawImage(enemyImg, screenX - size/2, drawY, size, size); ctx.restore(); } else { ctx.fillStyle = '#ff0000'; ctx.fillRect(screenX - size/2, drawY, size, size); } ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3); }
+            else { 
+                let enemyImg = Assets.images['enemy' + obs.subType]; 
+                if (enemyImg && enemyImg.complete) { ctx.save(); ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10; ctx.drawImage(enemyImg, screenX - size/2, drawY, size, size); ctx.restore(); } else { ctx.fillStyle = '#ff0000'; ctx.fillRect(screenX - size/2, drawY, size, size); } 
+                // V5.4: TRANSPARENT WARNING WALL
+                ctx.fillStyle = 'rgba(255,0,0,0.1)'; 
+                ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3);
+                // SCANLINE EFFECT ON WALL
+                for(let i=0; i<5; i++) {
+                    let ly = drawY - size*3 + (i * size*0.6) + (Date.now()/50 % size);
+                    if(ly < drawY) { ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.fillRect(screenX - size/2, ly, size, 2); }
+                }
+                // WARNING SYMBOL AT TOP
+                ctx.fillStyle = '#ff0000'; ctx.font = "bold 20px Courier New"; ctx.fillText("!", screenX, drawY - size*3.2);
+            }
         });
 
         let laneOffset = (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2;
