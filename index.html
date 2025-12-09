@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v5.1 Final UI)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v5.3 Fix)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -58,7 +58,6 @@
         h2 { font-size: 20px; color: #ffd700; margin: 10px 0; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
         h3 { font-size: 16px; color: #fff; margin: 20px 0 10px 0; border-bottom: 1px solid #333; width: 80%; text-align: center; padding-bottom: 5px; }
 
-        /* WALLET HEADER */
         .wallet-header { display: flex; gap: 30px; margin: 10px 0; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 10px; border: 1px solid #333; }
         .wallet-item { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; }
 
@@ -72,24 +71,20 @@
         .item-icon { font-size: 30px; margin-bottom: 5px; }
         .item-name { font-size: 12px; font-weight: bold; color: #fff; }
         
-        /* FIX: SHARP TEXT FOR PRICES */
         .price-tag { font-weight: bold; margin-top: 5px; font-size: 13px; letter-spacing: 0.5px; }
-        .cost-energy { color: #00ffff; text-shadow: 0 0 2px #0000ff; } /* Reduced glow for clarity */
+        .cost-energy { color: #00ffff; text-shadow: 0 0 2px #0000ff; }
         .cost-aurum { color: #ffd700; text-shadow: 0 0 2px #aa6600; }
         .cost-real { color: #00ff00; font-size: 15px; text-shadow: 0 0 2px #006600; }
-        
         .item-desc { font-size: 10px; color: #aaa; margin-top: 5px; text-transform: uppercase; }
         
         button { padding: 15px 50px; font-size: 20px; background: #ff00ff; color: white; border: none; cursor: pointer; box-shadow: 0 0 20px #ff00ff; text-transform: uppercase; font-weight: bold; letter-spacing: 2px; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%); transition: transform 0.1s; margin-top: 20px; }
         button:hover { background: #d000d0; transform: scale(1.05); }
         button:disabled { background: #555; cursor: not-allowed; filter: grayscale(100%); }
 
-        /* CONTROL TOGGLE */
         .control-toggle { display: flex; gap: 10px; margin-bottom: 10px; }
         .toggle-btn { padding: 5px 15px; border: 1px solid #555; background: rgba(0,0,0,0.5); color: #888; cursor: pointer; font-weight: bold; font-size: 12px; }
         .toggle-btn.active { border-color: #00ffff; color: #00ffff; background: rgba(0, 255, 255, 0.1); }
 
-        /* TOUCH CONTROLS (D-PAD) */
         #controls-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; display: none; }
         .control-btn { position: absolute; width: 80px; height: 80px; background: rgba(0, 255, 255, 0.1); border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-size: 30px; color: rgba(0, 255, 255, 0.8); user-select: none; -webkit-user-select: none; }
         .control-btn:active { background: rgba(0, 255, 255, 0.4); transform: scale(0.95); }
@@ -98,30 +93,12 @@
         #btn-jump { bottom: 120px; right: 20px; border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
         #btn-slide { bottom: 30px; right: 20px; border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); }
 
-        /* OVERDRIVE BUTTON */
-        #turbo-btn {
-            position: absolute; bottom: 200px; right: 20px; width: 60px; height: 60px;
-            border-radius: 50%; border: 2px solid #ffaa00; background: rgba(255, 170, 0, 0.1);
-            color: #ffaa00; font-weight: bold; font-size: 24px;
-            display: flex; align-items: center; justify-content: center;
-            pointer-events: auto; user-select: none; z-index: 20;
-            transition: all 0.1s;
-        }
+        #turbo-btn { position: absolute; bottom: 200px; right: 20px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #ffaa00; background: rgba(255, 170, 0, 0.1); color: #ffaa00; font-weight: bold; font-size: 24px; display: flex; align-items: center; justify-content: center; pointer-events: auto; user-select: none; z-index: 20; transition: all 0.1s; }
         #turbo-btn:active, #turbo-btn.active { background: #ffaa00; color: #000; box-shadow: 0 0 20px #ffaa00; transform: scale(0.95); }
 
-        /* ABILITY BUTTON */
-        #ability-btn {
-            position: absolute; bottom: 40px; right: 30px; width: 80px; height: 80px;
-            border-radius: 50%; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.2);
-            color: #00ff00; font-weight: bold; font-size: 14px;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center; cursor: pointer; pointer-events: auto;
-            box-shadow: 0 0 20px #00ff00; animation: pulse 1s infinite;
-            z-index: 20;
-        }
+        #ability-btn { position: absolute; bottom: 40px; right: 30px; width: 80px; height: 80px; border-radius: 50%; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.2); color: #00ff00; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; pointer-events: auto; box-shadow: 0 0 20px #00ff00; animation: pulse 1s infinite; z-index: 20; }
         @keyframes pulse { 0% { box-shadow: 0 0 10px #00ff00; } 50% { box-shadow: 0 0 30px #00ff00; } 100% { box-shadow: 0 0 10px #00ff00; } }
         
-        /* TUTORIAL & LEADERBOARD */
         #tutorial-layer, #leaderboard-layer { background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 30; }
         .card-panel { border: 2px solid #00ffff; padding: 20px; border-radius: 10px; background: rgba(0,20,20,0.95); width: 90%; max-width: 400px; box-shadow: 0 0 30px #00ffff; text-align: center; }
         .tut-row { display: flex; align-items: center; margin: 15px 0; justify-content: flex-start; gap: 15px; color: #fff; font-size: 16px; text-align: left; }
@@ -189,7 +166,7 @@
                 <input type="text" id="player-name-input" placeholder="ENTER PILOT ID" maxlength="10">
                 <button onclick="Leaderboard.submit()" style="margin-top:10px; font-size:16px;">UPLOAD</button>
             </div>
-            <button onclick="document.getElementById('leaderboard-layer').style.display='none'" style="margin-top:20px; background:#333;">CLOSE</button>
+            <button onclick="Leaderboard.close()" style="margin-top:20px; background:#333;">CLOSE</button>
         </div>
     </div>
 
@@ -220,7 +197,7 @@
                 <div class="shop-item" id="btn-shield" onclick="Economy.buyShield()">
                     <div class="item-icon">🛡️</div>
                     <div class="item-name">ACTIVE SHIELD</div>
-                    <div class="price-tag cost-energy" id="price-shield">500 ENERGY</div>
+                    <div class="price-tag cost-energy" id="price-shield">300 ENERGY</div>
                     <div class="item-desc">Invincible Start</div>
                 </div>
                 <div class="shop-item" id="btn-refine" onclick="Economy.refineEnergy()">
@@ -274,7 +251,7 @@
         <h1 style="color:#ff0055; text-shadow: 0 0 20px #ff0055;">SYSTEM CRASH</h1>
         <p id="gameover-stats" style="text-align:center; color:#fff; font-size: 20px; line-height: 1.8;"></p>
         <button id="submit-score-btn" onclick="Leaderboard.openSubmit()" style="background:#ffd700; color:#000; margin-bottom:10px;">UPLOAD SCORE</button>
-        <button id="return-btn">RETURN TO HUB</button>
+        <button id="return-btn" onclick="returnToMenu()">RETURN TO HUB</button>
     </div>
 </div>
 
@@ -299,8 +276,28 @@
 
     const Leaderboard = {
         lastScore: 0,
-        show() { document.getElementById('leaderboard-layer').style.display='flex'; document.getElementById('submit-area').style.display='none'; this.fetch(); },
-        openSubmit() { document.getElementById('gameover-layer').style.display='none'; document.getElementById('leaderboard-layer').style.display='flex'; document.getElementById('submit-area').style.display='block'; if(Economy.data.pilotName) document.getElementById('player-name-input').value = Economy.data.pilotName; this.fetch(); },
+        fromGameOver: false,
+        show() { 
+            this.fromGameOver = false;
+            document.getElementById('leaderboard-layer').style.display='flex'; 
+            document.getElementById('submit-area').style.display='none'; 
+            this.fetch(); 
+        },
+        openSubmit() { 
+            this.fromGameOver = true;
+            document.getElementById('gameover-layer').style.display='none'; 
+            document.getElementById('leaderboard-layer').style.display='flex'; 
+            document.getElementById('submit-area').style.display='block'; 
+            if(Economy.data.pilotName) document.getElementById('player-name-input').value = Economy.data.pilotName; 
+            this.fetch(); 
+        },
+        close() {
+            document.getElementById('leaderboard-layer').style.display='none';
+            if(this.fromGameOver) {
+                document.getElementById('gameover-layer').style.display='flex';
+                this.fromGameOver = false;
+            }
+        },
         async fetch() {
             if(!db) { document.getElementById('lb-content').innerHTML = "OFFLINE MODE"; return; }
             try {
@@ -324,13 +321,14 @@
     // --- 1. STATE ---
     const State = {
         isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
-        isFlowState: false, gameSpeed: 5.0, runEnergy: 0,
+        isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
         LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
         currentDistrict: 0, lastSpawnHeavy: false,
+        lastEnergyLane: -1, energyLaneStreak: 0,
         districts: [
             { name: "NEO-CORE", color: "#c000ff", sky: "rgba(0,0,50,0.4)" }, 
             { name: "SECTOR-9", color: "#ffaa00", sky: "rgba(50,20,0,0.4)" }, 
@@ -343,7 +341,6 @@
         data: { aurum: 10, energy: 0, unlockedTrail: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
         init() {
             try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
-            // Migration fix
             if(typeof this.data.energy === 'undefined') this.data.energy = 0;
             this.updateUI();
         },
@@ -355,7 +352,7 @@
             document.getElementById('menu-energy').innerText = this.data.energy;
             document.getElementById('hud-wallet-val').innerText = State.runEnergy; 
 
-            this.updateButton('price-shield', 500, false, "EQUIPPED", State.activeBoosts.shield, 'energy');
+            this.updateButton('price-shield', 300, false, "EQUIPPED", State.activeBoosts.shield, 'energy');
             this.updateButton('price-trail', 500, this.data.unlockedTrail, "OWNED", false, 'aurum');
             
             document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
@@ -371,7 +368,7 @@
                 el.style.color = currency >= cost ? (type==='energy' ? "#00ffff" : "#ffd700") : "#555"; 
             }
         },
-        buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 500) { this.data.energy -= 500; State.activeBoosts.shield = true; this.save(); }},
+        buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
         buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 500) { this.data.aurum -= 500; this.data.unlockedTrail = true; this.save(); }},
         refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 10; this.save(); alert("Refined 1000 Energy into 10 Aurum!"); }},
         buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }}
@@ -428,7 +425,7 @@
         const check = () => { Assets.loadedCount++; if (!completed && Assets.loadedCount >= Assets.total) { completed = true; onComplete(); } };
         const loadImg = (key, src) => { Assets.images[key] = new Image(); Assets.images[key].src = src; Assets.images[key].onload = check; Assets.images[key].onerror = check; };
         loadImg('player', 'assets/images/player.png'); loadImg('bg', 'assets/images/bg.png'); 
-        loadImg('energy', 'assets/images/energy.png'); // SOFT
+        loadImg('energy', 'assets/images/energy.png'); // Soft
         loadImg('enemy1', 'assets/images/enemy1.jpg'); loadImg('enemy2', 'assets/images/enemy2.jpg'); loadImg('enemy3', 'assets/images/enemy3.jpg'); loadImg('enemy4', 'assets/images/enemy4.jpg');
         loadImg('logo', 'assets/images/LogoSyncStudios.png');
     }
@@ -445,8 +442,8 @@
         Economy.init(); initInput();
 
         document.getElementById('start-btn').addEventListener('click', checkTutorial);
-        document.getElementById('return-btn').addEventListener('click', returnToMenu);
-        // Buttons handled by onclick
+        
+        // Return button hard-wired in HTML to returnToMenu()
         
         const turboBtn = document.getElementById('turbo-btn');
         const startTurbo = (e) => { e.preventDefault(); if(State.isPlaying) { State.isTurbo = true; turboBtn.classList.add('active'); }};
@@ -465,6 +462,15 @@
     function enterMainHub() { document.getElementById('intro-layer').style.display = 'none'; document.getElementById('menu-layer').style.display = 'flex'; }
     function checkTutorial() { if (!Economy.data.tutorialSeen) { document.getElementById('menu-layer').style.display='none'; document.getElementById('tutorial-layer').style.display='flex'; } else { startGame(); } }
     window.closeTutorial = function() { Economy.data.tutorialSeen = true; Economy.save(); document.getElementById('tutorial-layer').style.display='none'; startGame(); }
+    
+    // Global Return
+    window.returnToMenu = function() {
+        document.getElementById('gameover-layer').style.display = 'none';
+        document.getElementById('menu-layer').style.display = 'flex';
+        document.getElementById('hud-layer').classList.remove('visible');
+        document.getElementById('controls-layer').style.display='none';
+        Economy.updateUI();
+    };
 
     function startGame() {
         document.getElementById('start-btn').blur(); document.getElementById('menu-layer').style.display='none'; document.getElementById('gameover-layer').style.display='none'; document.getElementById('hud-layer').classList.add('visible');
@@ -474,7 +480,7 @@
     }
 
     function resetGame() {
-        State.score = 0; State.distance = 0; State.flowMultiplier = 1.0; State.flowCharge = 0; State.runEnergy = 0; State.isFlowState = false; State.texts = []; State.currentDistrict = 0; State.lastSpawnHeavy = false; beatTimer = 0; 
+        State.score = 0; State.distance = 0; State.flowMultiplier = 1.0; State.flowCharge = 0; State.runEnergy = 0; State.runAurum = 0; State.isFlowState = false; State.texts = []; State.currentDistrict = 0; State.lastSpawnHeavy = false; beatTimer = 0; 
         State.player.y = 0; State.player.dy = 0; State.player.state = 'RUN'; State.player.jumpCount = 0;
         State.isTurbo = false; State.gameSpeed = 5.0; State.baseSpeed = 5.0;
         if (State.activeBoosts.shield) { State.shieldAvailable = true; document.getElementById('ability-btn').style.display='flex'; } else { State.shieldAvailable = false; document.getElementById('ability-btn').style.display='none'; }
@@ -523,7 +529,7 @@
         if (obs.type === 'ENERGY') { obs.hit = true; obs.visible = false; collectEnergy(); return; }
         if (State.isFlowState) { obs.hit = true; obs.visible = false; spawnParticles(0, 0, 10, '#ffd700'); spawnFloatingText("SMASH!", "#ffd700"); AudioSys.playCrash(); State.score += 500; return; }
         if (obs.type === 'LOW_BEAM') { if (State.player.y > 60) return; }
-        else if (obs.type === 'ENEMY') { }
+        else if (obs.type === 'ENEMY') { } // Crash
         else if (obs.type === 'HIGH_BEAM') { if (State.player.state === 'SLIDE') { spawnFloatingText("SLIDE!", "#00ff00"); return; } }
         shakeScreen(); spawnFloatingText("CRASH!", "#ff0000"); AudioSys.playCrash();
         const flash = document.getElementById('damage-flash'); flash.style.opacity = 0.5; setTimeout(() => flash.style.opacity = 0, 100);
@@ -543,11 +549,12 @@
     function gameOver() {
         State.isPlaying = false; AudioSys.stopMusic(); Leaderboard.lastScore = Math.floor(State.score);
         Economy.data.energy += State.runEnergy; Economy.save();
-        document.getElementById('hud-layer').classList.remove('visible'); document.getElementById('gameover-layer').style.display = 'flex'; document.getElementById('controls-layer').style.display='none';
+        document.getElementById('hud-layer').classList.remove('visible'); 
+        // Force hide controls
+        document.getElementById('controls-layer').style.display='none';
+        document.getElementById('gameover-layer').style.display = 'flex';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
     }
-
-    function returnToMenu() { document.getElementById('gameover-layer').style.display = 'none'; document.getElementById('menu-layer').style.display = 'flex'; Economy.updateUI(); }
 
     function triggerBeat() {
         const beatBar = document.getElementById('beat-bar'); if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
@@ -559,14 +566,9 @@
         
         let patternRoll = Math.random();
         if (patternRoll < 0.2) { 
-            // 3. LOGIC FIX: PREVENT 3x SAME LANE
             let chosenLane = lanes[0];
-            if(chosenLane === State.lastEnergyLane) {
-                State.energyLaneStreak++;
-                if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3;
-            } else { State.energyLaneStreak = 1; }
+            if(chosenLane === State.lastEnergyLane) { State.energyLaneStreak++; if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3; } else { State.energyLaneStreak = 1; }
             State.lastEnergyLane = chosenLane;
-
             State.obstacles.push({ lane: chosenLane, type: 'ENERGY', subType: 1, z: 1600, hit: false, visible: true }); 
             State.obstacles.push({ lane: chosenLane, type: 'ENEMY', subType: 1, z: 2000, hit: false, visible: true }); 
         } 
@@ -576,10 +578,7 @@
                 let chosenLane = lanes[i];
                 if (r < 0.3) { 
                     type = 'ENERGY';
-                    if(chosenLane === State.lastEnergyLane) {
-                        State.energyLaneStreak++;
-                        if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3;
-                    } else { State.energyLaneStreak = 1; }
+                    if(chosenLane === State.lastEnergyLane) { State.energyLaneStreak++; if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3; } else { State.energyLaneStreak = 1; }
                     State.lastEnergyLane = chosenLane;
                 } else if (r < 0.5) { type = 'LOW_BEAM'; } else if (r < 0.7) { type = 'HIGH_BEAM'; } else { type = 'ENEMY'; subType = Math.floor(Math.random()*4)+1; } 
                 State.obstacles.push({ lane: chosenLane, type: type, subType: subType, z: 2000, hit: false, visible: true }); 
@@ -588,6 +587,7 @@
         if (!State.isFlowState && State.baseSpeed < 12.0) State.baseSpeed += 0.002;
     }
 
+    // --- 5. RENDERER ---
     function initInput() {
         document.addEventListener('keydown', (e) => {
             if (!State.isPlaying) return;
@@ -649,8 +649,7 @@
             let drawY = groundY - size;
             
             if (obs.type === 'ENERGY') { 
-                let spin = Math.sin(Date.now() / 200); 
-                let w = size * Math.abs(spin); let h = size; 
+                let spin = Math.sin(Date.now() / 200); let w = size * Math.abs(spin); let h = size; 
                 if (Assets.images.energy && Assets.images.energy.complete) { ctx.save(); ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 20; ctx.drawImage(Assets.images.energy, screenX - w/2, groundY - h - 10, w, h); ctx.restore(); } else { ctx.fillStyle = '#00ffff'; ctx.beginPath(); ctx.arc(screenX, groundY - size/2, size/3, 0, Math.PI*2); ctx.fill(); } 
             } 
             else if (obs.type === 'LOW_BEAM') { let barrierW = size * 1.8; ctx.fillStyle = '#ff3300'; ctx.shadowColor='#ff3300'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, groundY - size/2, barrierW, size/2); ctx.fillStyle = '#ffaa00'; ctx.fillRect(screenX - barrierW/2 + 5, groundY - size/2 + 5, 5, size/2-10); ctx.fillRect(screenX + barrierW/2 - 10, groundY - size/2 + 5, 5, size/2-10); }
