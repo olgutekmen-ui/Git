@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v5.4 Mobile Fix)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v6.0 Black Market)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -56,7 +56,7 @@
 
         h1 { font-size: 40px; color: #00ffff; margin-bottom: 5px; text-shadow: 0 0 20px #00ffff; text-transform: uppercase; letter-spacing: 5px; text-align: center; }
         h2 { font-size: 20px; color: #ffd700; margin: 10px 0; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
-        h3 { font-size: 16px; color: #fff; margin: 20px 0 10px 0; border-bottom: 1px solid #333; width: 80%; text-align: center; padding-bottom: 5px; }
+        h3 { font-size: 16px; color: #fff; margin: 30px 0 10px 0; border-bottom: 1px solid #333; width: 80%; text-align: center; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
 
         .wallet-header { display: flex; gap: 30px; margin: 10px 0; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 10px; border: 1px solid #333; }
         .wallet-item { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; }
@@ -192,13 +192,19 @@
             
             <button onclick="Leaderboard.show()" style="font-size:14px; padding:10px 30px; background:#333; box-shadow:none; margin-bottom:20px;">🏆 RANKINGS</button>
 
-            <h3>GEAR UPGRADES</h3>
+            <h3>BLACK MARKET (CONSUMABLES)</h3>
             <div class="shop-container">
                 <div class="shop-item" id="btn-shield" onclick="Economy.buyShield()">
                     <div class="item-icon">🛡️</div>
                     <div class="item-name">ACTIVE SHIELD</div>
                     <div class="price-tag cost-energy" id="price-shield">300 ENERGY</div>
                     <div class="item-desc">Invincible Start</div>
+                </div>
+                 <div class="shop-item premium" id="btn-revive" onclick="Economy.buyRevive()">
+                    <div class="item-icon">💖</div>
+                    <div class="item-name">NANOBOT HEART</div>
+                    <div class="price-tag cost-aurum" id="price-revive">1000 AURUM</div>
+                    <div class="item-desc">Auto-Revive (1x)</div>
                 </div>
                 <div class="shop-item" id="btn-refine" onclick="Economy.refineEnergy()">
                     <div class="item-icon">♻️</div>
@@ -208,9 +214,21 @@
                 </div>
             </div>
             
-            <h3>PREMIUM COSMETICS</h3>
+            <h3>CYBERWARE (PERMANENT)</h3>
             <div class="shop-container">
-                <div class="shop-item premium" id="btn-trail" onclick="Economy.buyTrail()">
+                <div class="shop-item premium" id="btn-magnet" onclick="Economy.buyMagnet()">
+                    <div class="item-icon">🧲</div>
+                    <div class="item-name">DATA SIPHON</div>
+                    <div class="price-tag cost-aurum" id="price-magnet">600 AURUM</div>
+                    <div class="item-desc">Auto-Collect Orbs</div>
+                </div>
+                <div class="shop-item premium" id="btn-skin-shadow" onclick="Economy.buySkin('shadow')">
+                    <div class="item-icon">🥷</div>
+                    <div class="item-name">SHADOW OPS</div>
+                    <div class="price-tag cost-aurum" id="price-skin-shadow">800 AURUM</div>
+                    <div class="item-desc">Stealth Suit</div>
+                </div>
+                 <div class="shop-item premium" id="btn-trail" onclick="Economy.buyTrail()">
                     <div class="item-icon">✨</div>
                     <div class="item-name">NEON AURA</div>
                     <div class="price-tag cost-aurum" id="price-trail">500 AURUM</div>
@@ -293,7 +311,6 @@
         },
         close() {
             document.getElementById('leaderboard-layer').style.display='none';
-            // If we came from game over, go back there
             if(this.fromGameOver) {
                 document.getElementById('gameover-layer').style.display='flex';
                 this.fromGameOver = false;
@@ -324,13 +341,12 @@
         isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
-        LANE_WIDTH_BASE: 0, // Recalculated in resize()
-        PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 0, PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
         currentDistrict: 0, lastSpawnHeavy: false,
-        lastEnergyLane: -1, energyLaneStreak: 0,
+        lastEnergyLane: -1, energyLaneStreak: 0, consecutiveEmptyBeats: 0,
         districts: [
             { name: "NEO-CORE", color: "#c000ff", sky: "rgba(0,0,50,0.4)" }, 
             { name: "SECTOR-9", color: "#ffaa00", sky: "rgba(50,20,0,0.4)" }, 
@@ -340,14 +356,18 @@
 
     // --- 2. ECONOMY ---
     const Economy = {
-        data: { aurum: 10, energy: 0, unlockedTrail: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
+        data: { aurum: 1000, energy: 500, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
         init() {
             try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
             if(typeof this.data.energy === 'undefined') this.data.energy = 0;
+            // Defaults for new vars
+            if(typeof this.data.unlockedMagnet === 'undefined') this.data.unlockedMagnet = false;
+            if(typeof this.data.hasRevive === 'undefined') this.data.hasRevive = false;
+            if(typeof this.data.unlockedSkins === 'undefined') this.data.unlockedSkins = [];
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 10, energy: 0, unlockedTrail: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' }; this.save(); alert("Data Reset."); } },
+        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 1000, energy: 500, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' }; this.save(); alert("Data Reset."); } },
         setControls(mode) { this.data.controlMode = mode; this.save(); },
         updateUI() {
             document.getElementById('menu-aurum').innerText = this.data.aurum;
@@ -355,7 +375,12 @@
             document.getElementById('hud-wallet-val').innerText = State.runEnergy; 
 
             this.updateButton('price-shield', 300, false, "EQUIPPED", State.activeBoosts.shield, 'energy');
+            this.updateButton('price-revive', 1000, false, "OWNED", this.data.hasRevive, 'aurum');
+            this.updateButton('price-magnet', 600, this.data.unlockedMagnet, "INSTALLED", false, 'aurum');
             this.updateButton('price-trail', 500, this.data.unlockedTrail, "OWNED", false, 'aurum');
+            
+            // Skin Logic
+            this.updateSkinButton('price-skin-shadow', 800, 'shadow');
             
             document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('toggle-buttons').className = this.data.controlMode === 'BUTTONS' ? 'toggle-btn active' : 'toggle-btn';
@@ -370,8 +395,34 @@
                 el.style.color = currency >= cost ? (type==='energy' ? "#00ffff" : "#ffd700") : "#555"; 
             }
         },
+        updateSkinButton(id, cost, skinName) {
+            const el = document.getElementById(id); if(!el) return;
+            const owned = this.data.unlockedSkins.includes(skinName);
+            if (this.data.equippedSkin === skinName) { el.innerText = "EQUIPPED"; el.style.color = "#00ff00"; }
+            else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; el.parentElement.onclick = () => Economy.equipSkin(skinName); }
+            else { el.innerText = `${cost} AURUM`; el.style.color = this.data.aurum >= cost ? "#ffd700" : "#555"; }
+        },
+        
+        // ACTIONS
         buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
+        buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 1000) { this.data.aurum -= 1000; this.data.hasRevive = true; this.save(); }},
+        buyMagnet() { if (!this.data.unlockedMagnet && this.data.aurum >= 600) { this.data.aurum -= 600; this.data.unlockedMagnet = true; this.save(); }},
         buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 500) { this.data.aurum -= 500; this.data.unlockedTrail = true; this.save(); }},
+        
+        buySkin(skinName) {
+            if (this.data.unlockedSkins.includes(skinName)) return; // Already owned
+            let cost = 800;
+            if (this.data.aurum >= cost) {
+                this.data.aurum -= cost;
+                this.data.unlockedSkins.push(skinName);
+                this.equipSkin(skinName); // Auto equip
+            }
+        },
+        equipSkin(skinName) {
+            this.data.equippedSkin = skinName;
+            this.save();
+        },
+        
         refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 10; this.save(); alert("Refined 1000 Energy into 10 Aurum!"); }},
         buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }}
     };
@@ -427,7 +478,7 @@
         const check = () => { Assets.loadedCount++; if (!completed && Assets.loadedCount >= Assets.total) { completed = true; onComplete(); } };
         const loadImg = (key, src) => { Assets.images[key] = new Image(); Assets.images[key].src = src; Assets.images[key].onload = check; Assets.images[key].onerror = check; };
         loadImg('player', 'assets/images/player.png'); loadImg('bg', 'assets/images/bg.png'); 
-        loadImg('energy', 'assets/images/energy.png'); 
+        loadImg('energy', 'assets/images/energy.png'); // Soft
         loadImg('enemy1', 'assets/images/enemy1.jpg'); loadImg('enemy2', 'assets/images/enemy2.jpg'); loadImg('enemy3', 'assets/images/enemy3.jpg'); loadImg('enemy4', 'assets/images/enemy4.jpg');
         loadImg('logo', 'assets/images/LogoSyncStudios.png');
     }
@@ -444,7 +495,6 @@
         Economy.init(); initInput();
 
         document.getElementById('start-btn').addEventListener('click', checkTutorial);
-        // Buttons handled by onclick
         
         const turboBtn = document.getElementById('turbo-btn');
         const startTurbo = (e) => { e.preventDefault(); if(State.isPlaying) { State.isTurbo = true; turboBtn.classList.add('active'); }};
@@ -487,6 +537,7 @@
         if (State.activeBoosts.shield) { State.shieldAvailable = true; document.getElementById('ability-btn').style.display='flex'; } else { State.shieldAvailable = false; document.getElementById('ability-btn').style.display='none'; }
         State.player.invulnerable = false; document.getElementById('hud-layer').classList.remove('flow-active');
         State.obstacles = []; State.particles = []; State.player.lane = 1; updateHUD(); announceDistrict(0);
+        State.energyLaneStreak = 0; State.lastEnergyLane = -1; State.consecutiveEmptyBeats = 0;
     }
 
     window.triggerShield = function() {
@@ -505,6 +556,13 @@
         } catch (e) { console.error(e); State.isPlaying = false; }
     }
 
+    // --- UNIFIED PERSPECTIVE HELPER ---
+    function getLaneCenterX(lane, scale) {
+        let cx = canvas.width / 2;
+        let laneOffset = (lane - 1); // -1, 0, 1
+        return cx + (laneOffset * State.LANE_WIDTH_BASE * 2 * scale);
+    }
+
     function updatePhysics() {
         let speedMod = State.isTurbo ? 1.5 : 1.0; let effectiveSpeed = State.gameSpeed * speedMod;
         State.distance += effectiveSpeed * 0.1;
@@ -515,10 +573,26 @@
         State.gameSpeed = State.baseSpeed;
         if (State.isFlowState) { State.flowCharge -= 0.3; if (State.flowCharge <= 0) deactivateFlowState(); }
         if (State.player.state === 'JUMP') { State.player.y += State.player.dy; State.player.dy -= GRAVITY; if (State.player.y <= 0) { State.player.y = 0; State.player.dy = 0; State.player.state = 'RUN'; State.player.jumpCount = 0; } } else if (State.player.state === 'SLIDE') { State.player.animTimer--; if (State.player.animTimer <= 0) State.player.state = 'RUN'; }
+        
+        // MAGNET LOGIC
+        if (Economy.data.unlockedMagnet) {
+            for (let obs of State.obstacles) {
+                if (obs.type === 'ENERGY' && !obs.hit && obs.z < State.PLAYER_Z_DEPTH + 400 && obs.z > State.PLAYER_Z_DEPTH - 100) {
+                    // Pull towards player lane visually
+                    if (obs.lane < State.player.lane) obs.lane += 0.1;
+                    if (obs.lane > State.player.lane) obs.lane -= 0.1;
+                    // Auto Collect if close
+                    if (Math.abs(obs.lane - State.player.lane) < 0.5) {
+                        obs.hit = true; obs.visible = false; collectEnergy();
+                    }
+                }
+            }
+        }
+
         for (let i = State.obstacles.length - 1; i >= 0; i--) {
             let obs = State.obstacles[i]; obs.z -= effectiveSpeed;
             let zNear = State.PLAYER_Z_DEPTH - 30; let zFar = State.PLAYER_Z_DEPTH + 30;
-            if (obs.z < zFar && obs.z > zNear && !obs.hit) { if (obs.lane === State.player.lane) checkCollision(obs); }
+            if (obs.z < zFar && obs.z > zNear && !obs.hit) { if (Math.round(obs.lane) === State.player.lane) checkCollision(obs); }
             if (obs.z < -200) State.obstacles.splice(i, 1);
         }
         State.particles.forEach((p, i) => { p.life--; p.x += p.vx; p.y += p.vy; if (p.life<=0) State.particles.splice(i,1); });
@@ -532,6 +606,16 @@
         if (obs.type === 'LOW_BEAM') { if (State.player.y > 60) return; }
         else if (obs.type === 'ENEMY') { } // Crash
         else if (obs.type === 'HIGH_BEAM') { if (State.player.state === 'SLIDE') { spawnFloatingText("SLIDE!", "#00ff00"); return; } }
+        
+        // REVIVE CHECK
+        if (Economy.data.hasRevive) {
+            Economy.data.hasRevive = false; Economy.save();
+            activateFlowState(); // Invulnerable
+            spawnFloatingText("REVIVED!", "#ff00ff");
+            obs.hit = true; obs.visible = false; // Destroy collision object
+            return;
+        }
+
         shakeScreen(); spawnFloatingText("CRASH!", "#ff0000"); AudioSys.playCrash();
         const flash = document.getElementById('damage-flash'); flash.style.opacity = 0.5; setTimeout(() => flash.style.opacity = 0, 100);
         gameOver(); 
@@ -551,10 +635,13 @@
         State.isPlaying = false; AudioSys.stopMusic(); Leaderboard.lastScore = Math.floor(State.score);
         Economy.data.energy += State.runEnergy; Economy.save();
         document.getElementById('hud-layer').classList.remove('visible'); 
+        // Force hide controls
         document.getElementById('controls-layer').style.display='none';
         document.getElementById('gameover-layer').style.display = 'flex';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
     }
+
+    function returnToMenu() { document.getElementById('gameover-layer').style.display = 'none'; document.getElementById('menu-layer').style.display = 'flex'; Economy.updateUI(); }
 
     function triggerBeat() {
         const beatBar = document.getElementById('beat-bar'); if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
@@ -619,8 +706,7 @@
         let maxDepthHeight = canvas.height - horizonY;
         let targetScale = (playerScreenY - horizonY) / maxDepthHeight;
         State.PLAYER_Z_DEPTH = (500 / targetScale) - 500;
-        // IMPROVED CALCULATION FOR NARROW SCREENS (v5.4)
-        if (canvas.width < 600) { State.LANE_WIDTH_BASE = canvas.width / 3.6; } else { State.LANE_WIDTH_BASE = 120; }
+        if (canvas.width < 600) { State.LANE_WIDTH_BASE = canvas.width / 5.0; } else { State.LANE_WIDTH_BASE = 120; }
     }
 
     function render() {
@@ -635,7 +721,13 @@
         ctx.strokeStyle = State.isFlowState ? '#ffd700' : dColor; 
         ctx.lineWidth = (2 * State.beatScale) + (State.isTurbo ? 2 : 0); 
         ctx.shadowBlur = State.isFlowState ? 30 : 15; ctx.shadowColor = ctx.strokeStyle;
-        for (let i = -1.5; i <= 1.5; i += 1.0) { let x1 = cx + (i * State.LANE_WIDTH_BASE * 2); let y1 = canvas.height; let x2 = cx + (i * 10); let y2 = horizonY; ctx.beginPath(); ctx.moveTo(x1+offX, y1); ctx.lineTo(x2+offX, y2); ctx.stroke(); }
+        for (let i = -1.5; i <= 1.5; i += 1.0) { 
+             let x1 = cx + (i * State.LANE_WIDTH_BASE * 2);
+             let y1 = canvas.height; 
+             let x2 = cx + (i * 10); 
+             let y2 = horizonY; 
+             ctx.beginPath(); ctx.moveTo(x1+offX, y1); ctx.lineTo(x2+offX, y2); ctx.stroke(); 
+        }
         let offset = (State.distance % 100) / 100; for (let i = 0; i < 10; i++) { let p = (i + offset) / 10; let y = horizonY + (canvas.height - horizonY) * (p * p * p); ctx.globalAlpha = p; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
         ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
 
@@ -643,8 +735,12 @@
         sortedObs.forEach(obs => {
             if (!obs.visible) return;
             let scale = 500 / (obs.z + 500); if (scale < 0) scale = 0;
-            let laneOffset = (obs.lane - 1) * State.LANE_WIDTH_BASE * 4; 
-            let screenX = cx + (laneOffset * scale * 0.5) + offX; let groundY = horizonY + ((canvas.height - horizonY) * scale); let size = 100 * scale;
+            
+            // UNIFIED X CALCULATION
+            let screenX = getLaneCenterX(obs.lane, scale) + offX;
+            let groundY = horizonY + ((canvas.height - horizonY) * scale);
+            let size = 100 * scale;
+            
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.beginPath(); ctx.ellipse(screenX, groundY, size * 0.8, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
             if (obs.type === 'ENEMY') { ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 2; let ringSize = size * (1.5 - (obs.z / 1000)); if (ringSize > 0) { ctx.beginPath(); ctx.arc(screenX, groundY, ringSize, 0, Math.PI*2); ctx.stroke(); } }
             let drawY = groundY - size;
@@ -654,20 +750,23 @@
                 if (Assets.images.energy && Assets.images.energy.complete) { ctx.save(); ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 20; ctx.drawImage(Assets.images.energy, screenX - w/2, groundY - h - 10, w, h); ctx.restore(); } else { ctx.fillStyle = '#00ffff'; ctx.beginPath(); ctx.arc(screenX, groundY - size/2, size/3, 0, Math.PI*2); ctx.fill(); } 
             } 
             else if (obs.type === 'LOW_BEAM') { let barrierW = size * 1.8; ctx.fillStyle = '#ff3300'; ctx.shadowColor='#ff3300'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, groundY - size/2, barrierW, size/2); ctx.fillStyle = '#ffaa00'; ctx.fillRect(screenX - barrierW/2 + 5, groundY - size/2 + 5, 5, size/2-10); ctx.fillRect(screenX + barrierW/2 - 10, groundY - size/2 + 5, 5, size/2-10); }
-            else if (obs.type === 'HIGH_BEAM') { let beamY = groundY - size * 2.2; let barrierW = size * 2.0; ctx.fillStyle = '#cc00ff'; ctx.shadowColor='#cc00ff'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, beamY, barrierW, size/2); ctx.fillStyle = '#fff'; ctx.fillRect(screenX - barrierW/2, beamY + size/4 - 2, barrierW, 4); }
+            else if (obs.type === 'HIGH_BEAM') { 
+                let beamY = groundY - size * 2.2; let barrierW = size * 2.0; ctx.fillStyle = '#cc00ff'; ctx.shadowColor='#cc00ff'; ctx.shadowBlur=30; ctx.fillRect(screenX - barrierW/2, beamY, barrierW, size/2); ctx.fillStyle = '#fff'; ctx.fillRect(screenX - barrierW/2, beamY + size/4 - 2, barrierW, 4); 
+                // GRADIENT (TRANSPARENT)
+                let grad = ctx.createLinearGradient(0, beamY, 0, beamY + size);
+                grad.addColorStop(0, 'rgba(200,0,255,0.4)'); grad.addColorStop(1, 'rgba(200,0,255,0.1)');
+                ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = grad; ctx.fillRect(screenX - barrierW/2, beamY, barrierW, size/2); ctx.restore();
+            }
             else { 
                 let enemyImg = Assets.images['enemy' + obs.subType]; 
                 if (enemyImg && enemyImg.complete) { ctx.save(); ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10; ctx.drawImage(enemyImg, screenX - size/2, drawY, size, size); ctx.restore(); } else { ctx.fillStyle = '#ff0000'; ctx.fillRect(screenX - size/2, drawY, size, size); } 
-                // V5.4: TRANSPARENT WARNING WALL
-                ctx.fillStyle = 'rgba(255,0,0,0.1)'; 
-                ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3);
-                // SCANLINE EFFECT ON WALL
-                for(let i=0; i<5; i++) {
-                    let ly = drawY - size*3 + (i * size*0.6) + (Date.now()/50 % size);
-                    if(ly < drawY) { ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.fillRect(screenX - size/2, ly, size, 2); }
-                }
-                // WARNING SYMBOL AT TOP
-                ctx.fillStyle = '#ff0000'; ctx.font = "bold 20px Courier New"; ctx.fillText("!", screenX, drawY - size*3.2);
+                
+                // GRADIENT WARNING (TRANSPARENT)
+                let grad = ctx.createLinearGradient(0, drawY - size*3, 0, drawY);
+                grad.addColorStop(0, 'rgba(255,0,0,0)'); grad.addColorStop(1, 'rgba(255,0,0,0.15)'); 
+                ctx.save(); ctx.globalCompositeOperation = 'screen'; 
+                ctx.fillStyle = grad; ctx.fillRect(screenX - size/2, drawY - size*3, size, size*3);
+                ctx.restore();
             }
         });
 
@@ -677,10 +776,16 @@
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); ctx.ellipse(px, basePy + 20, 60, 20, 0, 0, Math.PI*2); ctx.fill(); 
         
         if (State.isFlowState) { ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(px, py - 40, 80, 0, Math.PI*2); ctx.stroke(); }
+        // AURA COSMETIC
         if (Economy.data.unlockedTrail) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; let auraSize = size * (1.2 + Math.sin(Date.now()/100)*0.1); let grad = ctx.createRadialGradient(px, py-size/2, 10, px, py-size/2, auraSize); grad.addColorStop(0, 'rgba(0, 255, 255, 0.8)'); grad.addColorStop(1, 'rgba(0, 0, 255, 0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(px, py-size/2, auraSize, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
-
-        if (Assets.images.player && Assets.images.player.complete) { ctx.save(); ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); ctx.restore(); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
         
+        // SKIN LOGIC
+        ctx.save();
+        if (Economy.data.equippedSkin === 'shadow') { ctx.filter = "grayscale(100%) contrast(150%) brightness(0.6)"; }
+
+        if (Assets.images.player && Assets.images.player.complete) { ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
+        ctx.restore();
+
         State.particles.forEach(p => { ctx.fillStyle = p.color; ctx.beginPath(); let ppx = cx + (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2; ctx.arc(ppx + p.x, (canvas.height - 100) + p.y, p.size, 0, Math.PI*2); ctx.fill(); });
         State.texts.forEach(t => { ctx.font = "bold 24px Courier New"; ctx.textAlign = "center"; ctx.fillStyle = t.color; let ppx = cx + (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2; ctx.fillText(t.msg, ppx, (canvas.height - 150) + t.y); });
     }
