@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v6.0 Black Market)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v6.2 Golden Valkyrie)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -56,7 +56,7 @@
 
         h1 { font-size: 40px; color: #00ffff; margin-bottom: 5px; text-shadow: 0 0 20px #00ffff; text-transform: uppercase; letter-spacing: 5px; text-align: center; }
         h2 { font-size: 20px; color: #ffd700; margin: 10px 0; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
-        h3 { font-size: 16px; color: #fff; margin: 30px 0 10px 0; border-bottom: 1px solid #333; width: 80%; text-align: center; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+        h3 { font-size: 16px; color: #fff; margin: 20px 0 10px 0; border-bottom: 1px solid #333; width: 80%; text-align: center; padding-bottom: 5px; }
 
         .wallet-header { display: flex; gap: 30px; margin: 10px 0; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 10px; border: 1px solid #333; }
         .wallet-item { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; }
@@ -99,7 +99,7 @@
         #ability-btn { position: absolute; bottom: 40px; right: 30px; width: 80px; height: 80px; border-radius: 50%; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.2); color: #00ff00; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; pointer-events: auto; box-shadow: 0 0 20px #00ff00; animation: pulse 1s infinite; z-index: 20; }
         @keyframes pulse { 0% { box-shadow: 0 0 10px #00ff00; } 50% { box-shadow: 0 0 30px #00ff00; } 100% { box-shadow: 0 0 10px #00ff00; } }
         
-        #tutorial-layer, #leaderboard-layer { background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 30; }
+        #tutorial-layer, #leaderboard-layer, #pause-layer { background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 30; }
         .card-panel { border: 2px solid #00ffff; padding: 20px; border-radius: 10px; background: rgba(0,20,20,0.95); width: 90%; max-width: 400px; box-shadow: 0 0 30px #00ffff; text-align: center; }
         .tut-row { display: flex; align-items: center; margin: 15px 0; justify-content: flex-start; gap: 15px; color: #fff; font-size: 16px; text-align: left; }
         .tut-icon { font-size: 24px; width: 40px; text-align: center; color: #ffd700; flex-shrink: 0; }
@@ -108,6 +108,9 @@
         #lb-table td { padding: 8px 5px; border-bottom: 1px solid #333; }
         #lb-table tr:first-child td { color: #ffd700; font-weight: bold; }
         #player-name-input { background: #000; border: 1px solid #00ffff; color: #fff; padding: 10px; font-family: 'Courier New', monospace; font-size: 18px; text-align: center; width: 80%; margin-top: 10px; }
+        
+        #pause-btn-hud { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border: 2px solid #fff; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; cursor: pointer; pointer-events: auto; background: rgba(0,0,0,0.5); z-index: 25; color: #fff; }
+        #pause-btn-hud:active { background: #fff; color: #000; }
     </style>
 </head>
 <body>
@@ -119,6 +122,8 @@
 
     <div id="hud-layer" class="ui-layer">
         <div id="score-display">SCORE: 0</div>
+        <div id="pause-btn-hud" onclick="togglePause()">||</div>
+
         <div id="currency-display">
             <img src="assets/images/energy.png" class="currency-icon">
             <span id="hud-wallet-val">0</span>
@@ -137,6 +142,14 @@
         <div id="btn-right" class="control-btn">➡</div>
         <div id="btn-jump" class="control-btn">⬆</div>
         <div id="btn-slide" class="control-btn">⬇</div>
+    </div>
+
+    <div id="pause-layer" class="menu-overlay">
+        <div class="card-panel">
+            <h2 style="margin-top:0; color:#fff;">SYSTEM PAUSED</h2>
+            <button onclick="togglePause()" style="margin-top:20px; width:100%;">RESUME</button>
+            <button onclick="abortRun()" style="margin-top:10px; width:100%; background:#ff5500;">ABORT RUN</button>
+        </div>
     </div>
 
     <div id="intro-layer" class="menu-overlay">
@@ -200,7 +213,7 @@
                     <div class="price-tag cost-energy" id="price-shield">300 ENERGY</div>
                     <div class="item-desc">Invincible Start</div>
                 </div>
-                 <div class="shop-item premium" id="btn-revive" onclick="Economy.buyRevive()">
+                <div class="shop-item premium" id="btn-revive" onclick="Economy.buyRevive()">
                     <div class="item-icon">💖</div>
                     <div class="item-name">NANOBOT HEART</div>
                     <div class="price-tag cost-aurum" id="price-revive">1000 AURUM</div>
@@ -216,7 +229,7 @@
             
             <h3>CYBERWARE (PERMANENT)</h3>
             <div class="shop-container">
-                <div class="shop-item premium" id="btn-magnet" onclick="Economy.buyMagnet()">
+                 <div class="shop-item premium" id="btn-magnet" onclick="Economy.buyMagnet()">
                     <div class="item-icon">🧲</div>
                     <div class="item-name">DATA SIPHON</div>
                     <div class="price-tag cost-aurum" id="price-magnet">600 AURUM</div>
@@ -227,6 +240,12 @@
                     <div class="item-name">SHADOW OPS</div>
                     <div class="price-tag cost-aurum" id="price-skin-shadow">800 AURUM</div>
                     <div class="item-desc">Stealth Suit</div>
+                </div>
+                <div class="shop-item premium" id="btn-skin-gold" onclick="Economy.buySkin('gold')">
+                    <div class="item-icon">🌟</div>
+                    <div class="item-name">VALKYRIE</div>
+                    <div class="price-tag cost-aurum" id="price-skin-gold">2500 AURUM</div>
+                    <div class="item-desc">Solid Gold</div>
                 </div>
                  <div class="shop-item premium" id="btn-trail" onclick="Economy.buyTrail()">
                     <div class="item-icon">✨</div>
@@ -338,10 +357,10 @@
 
     // --- 1. STATE ---
     const State = {
-        isPlaying: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
+        isPlaying: false, isPaused: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
-        LANE_WIDTH_BASE: 0, PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
@@ -356,18 +375,18 @@
 
     // --- 2. ECONOMY ---
     const Economy = {
-        data: { aurum: 1000, energy: 500, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
+        data: { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
         init() {
             try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
             if(typeof this.data.energy === 'undefined') this.data.energy = 0;
-            // Defaults for new vars
+            // Defaults
             if(typeof this.data.unlockedMagnet === 'undefined') this.data.unlockedMagnet = false;
             if(typeof this.data.hasRevive === 'undefined') this.data.hasRevive = false;
             if(typeof this.data.unlockedSkins === 'undefined') this.data.unlockedSkins = [];
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 1000, energy: 500, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' }; this.save(); alert("Data Reset."); } },
+        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' }; this.save(); alert("Data Reset."); } },
         setControls(mode) { this.data.controlMode = mode; this.save(); },
         updateUI() {
             document.getElementById('menu-aurum').innerText = this.data.aurum;
@@ -381,6 +400,7 @@
             
             // Skin Logic
             this.updateSkinButton('price-skin-shadow', 800, 'shadow');
+            this.updateSkinButton('price-skin-gold', 2500, 'gold');
             
             document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('toggle-buttons').className = this.data.controlMode === 'BUTTONS' ? 'toggle-btn active' : 'toggle-btn';
@@ -402,7 +422,6 @@
             else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; el.parentElement.onclick = () => Economy.equipSkin(skinName); }
             else { el.innerText = `${cost} AURUM`; el.style.color = this.data.aurum >= cost ? "#ffd700" : "#555"; }
         },
-        
         // ACTIONS
         buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
         buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 1000) { this.data.aurum -= 1000; this.data.hasRevive = true; this.save(); }},
@@ -410,19 +429,15 @@
         buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 500) { this.data.aurum -= 500; this.data.unlockedTrail = true; this.save(); }},
         
         buySkin(skinName) {
-            if (this.data.unlockedSkins.includes(skinName)) return; // Already owned
-            let cost = 800;
+            if (this.data.unlockedSkins.includes(skinName)) return; 
+            let cost = (skinName === 'shadow') ? 800 : 2500;
             if (this.data.aurum >= cost) {
                 this.data.aurum -= cost;
                 this.data.unlockedSkins.push(skinName);
-                this.equipSkin(skinName); // Auto equip
+                this.equipSkin(skinName); 
             }
         },
-        equipSkin(skinName) {
-            this.data.equippedSkin = skinName;
-            this.save();
-        },
-        
+        equipSkin(skinName) { this.data.equippedSkin = skinName; this.save(); },
         refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 10; this.save(); alert("Refined 1000 Energy into 10 Aurum!"); }},
         buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }}
     };
@@ -456,7 +471,7 @@
             this.resume(); this.isPlaying = true; this.noteIndex = 0;
             if(this.sequencerTimer) clearTimeout(this.sequencerTimer);
             const playStep = () => {
-                if(!State.isPlaying) { this.isPlaying = false; return; }
+                if(!State.isPlaying || State.isPaused) { if(!State.isPaused) this.isPlaying = false; return; }
                 const freq = this.bassLine[this.noteIndex % this.bassLine.length];
                 let pitchMod = State.isTurbo ? 1.5 : 1.0;
                 this.playTone(freq * pitchMod, 'sawtooth', 0.15, 0.4);
@@ -497,7 +512,7 @@
         document.getElementById('start-btn').addEventListener('click', checkTutorial);
         
         const turboBtn = document.getElementById('turbo-btn');
-        const startTurbo = (e) => { e.preventDefault(); if(State.isPlaying) { State.isTurbo = true; turboBtn.classList.add('active'); }};
+        const startTurbo = (e) => { e.preventDefault(); if(State.isPlaying && !State.isPaused) { State.isTurbo = true; turboBtn.classList.add('active'); }};
         const endTurbo = (e) => { e.preventDefault(); State.isTurbo = false; turboBtn.classList.remove('active'); };
         turboBtn.addEventListener('mousedown', startTurbo); turboBtn.addEventListener('mouseup', endTurbo); turboBtn.addEventListener('mouseleave', endTurbo);
         turboBtn.addEventListener('touchstart', startTurbo); turboBtn.addEventListener('touchend', endTurbo);
@@ -517,17 +532,44 @@
     // Global Return
     window.returnToMenu = function() {
         document.getElementById('gameover-layer').style.display = 'none';
+        document.getElementById('pause-layer').style.display = 'none';
         document.getElementById('menu-layer').style.display = 'flex';
         document.getElementById('hud-layer').classList.remove('visible');
         document.getElementById('controls-layer').style.display='none';
+        State.isPlaying = false; State.isPaused = false;
+        AudioSys.stopMusic();
         Economy.updateUI();
     };
+
+    window.togglePause = function() {
+        if(!State.isPlaying) return;
+        State.isPaused = !State.isPaused;
+        if(State.isPaused) {
+            AudioSys.ctx.suspend();
+            document.getElementById('pause-layer').style.display = 'flex';
+            document.getElementById('controls-layer').style.display = 'none';
+        } else {
+            AudioSys.ctx.resume();
+            document.getElementById('pause-layer').style.display = 'none';
+            if(Economy.data.controlMode === 'BUTTONS') document.getElementById('controls-layer').style.display = 'block';
+            lastTime = performance.now();
+            AudioSys.startMusic(); 
+            requestAnimationFrame(loop);
+        }
+    }
+    
+    window.abortRun = function() {
+        togglePause(); 
+        State.isPaused = false;
+        gameOver();
+    }
 
     function startGame() {
         document.getElementById('start-btn').blur(); document.getElementById('menu-layer').style.display='none'; document.getElementById('gameover-layer').style.display='none'; document.getElementById('hud-layer').classList.add('visible');
         if(Economy.data.controlMode === 'BUTTONS') { document.getElementById('controls-layer').style.display='block'; document.getElementById('ability-btn').style.bottom='140px'; document.getElementById('turbo-btn').style.bottom='200px'; } 
         else { document.getElementById('controls-layer').style.display='none'; document.getElementById('ability-btn').style.bottom='40px'; document.getElementById('turbo-btn').style.bottom='140px'; }
-        State.isPlaying = true; AudioSys.init(); AudioSys.startMusic(); resetGame(); lastTime = performance.now(); requestAnimationFrame(loop);
+        State.isPlaying = true; State.isPaused = false;
+        AudioSys.init(); AudioSys.startMusic(); resetGame(); lastTime = performance.now(); requestAnimationFrame(loop);
     }
 
     function resetGame() {
@@ -541,13 +583,13 @@
     }
 
     window.triggerShield = function() {
-        if (State.isPlaying && State.shieldAvailable && !State.isFlowState) { activateFlowState(); spawnFloatingText("SHIELD DEPLOYED!", "#00ff00"); AudioSys.playCollect(); State.shieldAvailable = false; State.activeBoosts.shield = false; document.getElementById('ability-btn').style.display='none'; }
+        if (State.isPlaying && !State.isPaused && State.shieldAvailable && !State.isFlowState) { activateFlowState(); spawnFloatingText("SHIELD DEPLOYED!", "#00ff00"); AudioSys.playCollect(); State.shieldAvailable = false; State.activeBoosts.shield = false; document.getElementById('ability-btn').style.display='none'; }
     };
 
     function announceDistrict(idx) { let d = State.districts[idx]; let el = document.getElementById('district-announcer'); el.innerText = "ENTERING: " + d.name; el.style.color = d.color; el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 3000); }
 
     function loop(timestamp) {
-        if (!State.isPlaying) return;
+        if (!State.isPlaying || State.isPaused) return;
         try {
             let dt = timestamp - lastTime; lastTime = timestamp; updatePhysics();
             beatTimer += dt; if (beatTimer > BEAT_INTERVAL) { beatTimer = 0; triggerBeat(); }
@@ -637,6 +679,7 @@
         document.getElementById('hud-layer').classList.remove('visible'); 
         // Force hide controls
         document.getElementById('controls-layer').style.display='none';
+        document.getElementById('pause-layer').style.display='none';
         document.getElementById('gameover-layer').style.display = 'flex';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
     }
@@ -647,11 +690,23 @@
         const beatBar = document.getElementById('beat-bar'); if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
         State.beatScale = 2.0; 
         let spawnRates = [0.4, 0.5, 0.6]; let currentRate = spawnRates[Math.min(State.currentDistrict, 2)];
-        if (Math.random() > currentRate) return; 
-        let maxCount = 2; if (State.lastSpawnHeavy) { maxCount = 1; State.lastSpawnHeavy = false; } else { if (Math.random() < 0.4) { maxCount = 2; State.lastSpawnHeavy = true; } else { maxCount = 1; } }
+        
+        // DIRECTOR AI: FORCE SPAWN IF BORED
+        if (State.consecutiveEmptyBeats >= 2) { currentRate = 1.1; } // Force trigger
+        
+        if (Math.random() > currentRate) {
+            State.consecutiveEmptyBeats++;
+            return; 
+        }
+        State.consecutiveEmptyBeats = 0; 
+
+        let maxCount = 2; 
+        // IMPOSSIBLE WALL PREVENTION
+        if (State.lastSpawnHeavy) { maxCount = 1; State.lastSpawnHeavy = false; } else { if (Math.random() < 0.4) { maxCount = 2; State.lastSpawnHeavy = true; } else { maxCount = 1; } }
         let lanes = [0, 1, 2].sort(() => Math.random() - 0.5); let count = Math.min(maxCount, (Math.random() < 0.5 ? 1 : 2)); 
         
         let patternRoll = Math.random();
+        // LURE PATTERN
         if (patternRoll < 0.2) { 
             let chosenLane = lanes[0];
             if(chosenLane === State.lastEnergyLane) { State.energyLaneStreak++; if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3; } else { State.energyLaneStreak = 1; }
@@ -677,7 +732,8 @@
     // --- 5. RENDERER ---
     function initInput() {
         document.addEventListener('keydown', (e) => {
-            if (!State.isPlaying) return;
+            if (e.code === 'Escape') { togglePause(); return; }
+            if (!State.isPlaying || State.isPaused) return;
             if (e.code === 'Space') { triggerShield(); return; }
             if (e.key === 'Shift') { State.isTurbo = true; document.getElementById('turbo-btn').classList.add('active'); return; }
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) { e.preventDefault(); }
@@ -688,7 +744,7 @@
         let tsX=0, tsY=0;
         document.addEventListener('touchstart', e => { tsX = e.changedTouches[0].screenX; tsY = e.changedTouches[0].screenY; }, {passive:false});
         document.addEventListener('touchend', e => {
-            if (!State.isPlaying || e.target.classList.contains('control-btn') || e.target.id === 'turbo-btn') return;
+            if (!State.isPlaying || State.isPaused || e.target.classList.contains('control-btn') || e.target.id === 'turbo-btn' || e.target.id === 'pause-btn-hud') return;
             let teX = e.changedTouches[0].screenX; let teY = e.changedTouches[0].screenY;
             let dx = teX - tsX; let dy = teY - tsY;
             if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > 30) changeLane(dx > 0 ? 1 : -1); } else { if (Math.abs(dy) > 30) { if (dy > 0) doSlide(); else doJump(); } }
@@ -770,20 +826,23 @@
             }
         });
 
-        let laneOffset = (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2;
-        let px = cx + laneOffset + offX; let basePy = canvas.height - 150; let py = basePy - State.player.y; let size = 90; let squash = 1.0;
+        // PLAYER RENDER
+        let scale = 500 / (State.PLAYER_Z_DEPTH + 500);
+        let px = getLaneCenterX(State.player.lane, scale) + offX;
+        let basePy = canvas.height - 150;
+        let py = basePy - State.player.y; let size = 90; let squash = 1.0;
         if (State.player.state === 'SLIDE') { squash = 0.5; py += 50; }
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); ctx.ellipse(px, basePy + 20, 60, 20, 0, 0, Math.PI*2); ctx.fill(); 
         
         if (State.isFlowState) { ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(px, py - 40, 80, 0, Math.PI*2); ctx.stroke(); }
-        // AURA COSMETIC
         if (Economy.data.unlockedTrail) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; let auraSize = size * (1.2 + Math.sin(Date.now()/100)*0.1); let grad = ctx.createRadialGradient(px, py-size/2, 10, px, py-size/2, auraSize); grad.addColorStop(0, 'rgba(0, 255, 255, 0.8)'); grad.addColorStop(1, 'rgba(0, 0, 255, 0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(px, py-size/2, auraSize, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+
+        if (Assets.images.player && Assets.images.player.complete) { ctx.save(); ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); ctx.restore(); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
         
         // SKIN LOGIC
         ctx.save();
         if (Economy.data.equippedSkin === 'shadow') { ctx.filter = "grayscale(100%) contrast(150%) brightness(0.6)"; }
-
-        if (Assets.images.player && Assets.images.player.complete) { ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
+        if (Economy.data.equippedSkin === 'gold') { ctx.filter = "sepia(100%) saturate(300%) brightness(1.2) hue-rotate(5deg)"; }
         ctx.restore();
 
         State.particles.forEach(p => { ctx.fillStyle = p.color; ctx.beginPath(); let ppx = cx + (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2; ctx.arc(ppx + p.x, (canvas.height - 100) + p.y, p.size, 0, Math.PI*2); ctx.fill(); });
