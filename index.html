@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v6.4 Daily Pass)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v6.5 Skin Fix)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -67,8 +67,6 @@
         .shop-item:hover { border-color: #00ffff; transform: translateY(-3px); }
         .shop-item.premium { border-color: #ffd700; }
         .shop-item.premium:hover { border-color: #fff; box-shadow: 0 0 15px #ffd700; }
-        .shop-item.subscription { border-color: #ff00ff; }
-        .shop-item.subscription:hover { border-color: #fff; box-shadow: 0 0 15px #ff00ff; }
 
         .item-icon { font-size: 30px; margin-bottom: 5px; }
         .item-name { font-size: 12px; font-weight: bold; color: #fff; }
@@ -237,13 +235,13 @@
                     <div class="price-tag cost-aurum" id="price-magnet">6 AURUM</div>
                     <div class="item-desc">Auto-Collect Orbs</div>
                 </div>
-                <div class="shop-item premium" id="btn-skin-shadow" onclick="Economy.buySkin('shadow')">
+                <div class="shop-item premium" id="btn-skin-shadow" onclick="Economy.handleSkinAction('shadow', 8)">
                     <div class="item-icon">🥷</div>
                     <div class="item-name">SHADOW OPS</div>
                     <div class="price-tag cost-aurum" id="price-skin-shadow">8 AURUM</div>
                     <div class="item-desc">Stealth Suit</div>
                 </div>
-                <div class="shop-item premium" id="btn-skin-gold" onclick="Economy.buySkin('gold')">
+                <div class="shop-item premium" id="btn-skin-gold" onclick="Economy.handleSkinAction('gold', 30)">
                     <div class="item-icon">🌟</div>
                     <div class="item-name">VALKYRIE</div>
                     <div class="price-tag cost-aurum" id="price-skin-gold">30 AURUM</div>
@@ -265,8 +263,8 @@
                     <div class="item-desc">2 Aurum</div>
                     <div class="price-tag cost-real">$1.99</div>
                 </div>
-                <div class="shop-item real-money subscription" id="btn-pass" onclick="Economy.buyPass()">
-                    <img src="assets/images/aurum.png" style="width:35px; margin-bottom:5px;">
+                <div class="shop-item real-money" id="btn-pass" onclick="Economy.buyPass()">
+                    <img src="assets/images/aurum.png" style="width:30px; margin-bottom:5px;">
                     <div class="item-name">10 MB PASS</div>
                     <div class="item-desc" id="pass-desc">5 + 2 Daily (30d)</div>
                     <div class="price-tag cost-real">$4.99</div>
@@ -368,7 +366,7 @@
         isPlaying: false, isPaused: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
-        LANE_WIDTH_BASE: 0, PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
@@ -383,7 +381,7 @@
 
     // --- 2. ECONOMY ---
     const Economy = {
-        data: { aurum: 5, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE',
+        data: { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE',
             passActive: false, passDays: 0, lastPassClaim: 0 },
         init() {
             try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
@@ -393,7 +391,7 @@
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 5, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE', passActive: false, passDays: 0, lastPassClaim: 0 }; this.save(); alert("Data Reset."); } },
+        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE', passActive: false, passDays: 0, lastPassClaim: 0 }; this.save(); alert("Data Reset."); } },
         setControls(mode) { this.data.controlMode = mode; this.save(); },
         
         checkDailyPass() {
@@ -420,6 +418,7 @@
             this.updateButton('price-magnet', 6, this.data.unlockedMagnet, "INSTALLED", false, 'aurum');
             this.updateButton('price-trail', 5, this.data.unlockedTrail, "OWNED", false, 'aurum');
             
+            // Skin Logic
             this.updateSkinButton('price-skin-shadow', 8, 'shadow');
             this.updateSkinButton('price-skin-gold', 30, 'gold');
             
@@ -431,7 +430,7 @@
                 passDesc.innerText = `ACTIVE: ${this.data.passDays} DAYS LEFT`;
                 passDesc.style.color = '#00ff00';
             } else {
-                passBtn.style.borderColor = '#ff00ff';
+                passBtn.style.borderColor = '';
                 passDesc.innerText = "5 + 2 Daily (30d)";
                 passDesc.style.color = '#aaa';
             }
@@ -453,7 +452,7 @@
             const el = document.getElementById(id); if(!el) return;
             const owned = this.data.unlockedSkins.includes(skinName);
             if (this.data.equippedSkin === skinName) { el.innerText = "EQUIPPED"; el.style.color = "#00ff00"; }
-            else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; el.parentElement.onclick = () => Economy.equipSkin(skinName); }
+            else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; } // No onclick here anymore, handled by handleSkinAction
             else { el.innerText = `${cost} AURUM`; el.style.color = this.data.aurum >= cost ? "#ffd700" : "#555"; }
         },
         // ACTIONS
@@ -462,16 +461,27 @@
         buyMagnet() { if (!this.data.unlockedMagnet && this.data.aurum >= 6) { this.data.aurum -= 6; this.data.unlockedMagnet = true; this.save(); }},
         buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 5) { this.data.aurum -= 5; this.data.unlockedTrail = true; this.save(); }},
         
-        buySkin(skinName) {
-            if (this.data.unlockedSkins.includes(skinName)) return; 
-            let cost = (skinName === 'shadow') ? 8 : 30;
-            if (this.data.aurum >= cost) {
-                this.data.aurum -= cost;
-                this.data.unlockedSkins.push(skinName);
-                this.equipSkin(skinName); 
+        handleSkinAction(skinName, cost) {
+            if (this.data.unlockedSkins.includes(skinName)) {
+                this.equipSkin(skinName);
+                alert("SKIN EQUIPPED");
+            } else {
+                if (this.data.aurum >= cost) {
+                    this.data.aurum -= cost;
+                    this.data.unlockedSkins.push(skinName);
+                    this.equipSkin(skinName);
+                    alert("PURCHASE SUCCESSFUL: SKIN EQUIPPED");
+                } else {
+                    alert("INSUFFICIENT FUNDS");
+                }
             }
         },
-        equipSkin(skinName) { this.data.equippedSkin = skinName; this.save(); },
+        equipSkin(skinName) { 
+            this.data.equippedSkin = skinName; 
+            this.save();
+            this.updateUI(); // Explicit update
+        },
+        
         refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 1; this.save(); alert("Refined 1000 Energy into 1 Aurum!"); }},
         buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }},
         
@@ -732,27 +742,17 @@
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
     }
 
+    function returnToMenu() { document.getElementById('gameover-layer').style.display = 'none'; document.getElementById('menu-layer').style.display = 'flex'; Economy.updateUI(); }
+
     function triggerBeat() {
         const beatBar = document.getElementById('beat-bar'); if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
         State.beatScale = 2.0; 
         let spawnRates = [0.4, 0.5, 0.6]; let currentRate = spawnRates[Math.min(State.currentDistrict, 2)];
-        
-        // DIRECTOR AI: FORCE SPAWN IF BORED
-        if (State.consecutiveEmptyBeats >= 2) { currentRate = 1.1; } // Force trigger
-        
-        if (Math.random() > currentRate) {
-            State.consecutiveEmptyBeats++;
-            return; 
-        }
-        State.consecutiveEmptyBeats = 0; 
-
-        let maxCount = 2; 
-        // IMPOSSIBLE WALL PREVENTION
-        if (State.lastSpawnHeavy) { maxCount = 1; State.lastSpawnHeavy = false; } else { if (Math.random() < 0.4) { maxCount = 2; State.lastSpawnHeavy = true; } else { maxCount = 1; } }
+        if (Math.random() > currentRate) return; 
+        let maxCount = 2; if (State.lastSpawnHeavy) { maxCount = 1; State.lastSpawnHeavy = false; } else { if (Math.random() < 0.4) { maxCount = 2; State.lastSpawnHeavy = true; } else { maxCount = 1; } }
         let lanes = [0, 1, 2].sort(() => Math.random() - 0.5); let count = Math.min(maxCount, (Math.random() < 0.5 ? 1 : 2)); 
         
         let patternRoll = Math.random();
-        // LURE PATTERN
         if (patternRoll < 0.2) { 
             let chosenLane = lanes[0];
             if(chosenLane === State.lastEnergyLane) { State.energyLaneStreak++; if(State.energyLaneStreak >= 3) chosenLane = (chosenLane + 1) % 3; } else { State.energyLaneStreak = 1; }
@@ -882,13 +882,13 @@
         
         if (State.isFlowState) { ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(px, py - 40, 80, 0, Math.PI*2); ctx.stroke(); }
         if (Economy.data.unlockedTrail) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; let auraSize = size * (1.2 + Math.sin(Date.now()/100)*0.1); let grad = ctx.createRadialGradient(px, py-size/2, 10, px, py-size/2, auraSize); grad.addColorStop(0, 'rgba(0, 255, 255, 0.8)'); grad.addColorStop(1, 'rgba(0, 0, 255, 0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(px, py-size/2, auraSize, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
-
-        if (Assets.images.player && Assets.images.player.complete) { ctx.save(); ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); ctx.restore(); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
         
         // SKIN LOGIC
         ctx.save();
         if (Economy.data.equippedSkin === 'shadow') { ctx.filter = "grayscale(100%) contrast(150%) brightness(0.6)"; }
         if (Economy.data.equippedSkin === 'gold') { ctx.filter = "sepia(100%) saturate(300%) brightness(1.2) hue-rotate(5deg)"; }
+        
+        if (Assets.images.player && Assets.images.player.complete) { ctx.shadowColor = State.isFlowState ? '#ffd700' : '#00ff00'; ctx.shadowBlur = 20; let drawH = size * squash; ctx.drawImage(Assets.images.player, px - size/2, py - drawH, size, drawH); } else { ctx.fillStyle = '#aa00ff'; ctx.fillRect(px - 30, py - 60, 60, 60); }
         ctx.restore();
 
         State.particles.forEach(p => { ctx.fillStyle = p.color; ctx.beginPath(); let ppx = cx + (State.player.lane - 1) * State.LANE_WIDTH_BASE * 2; ctx.arc(ppx + p.x, (canvas.height - 100) + p.y, p.size, 0, Math.PI*2); ctx.fill(); });
