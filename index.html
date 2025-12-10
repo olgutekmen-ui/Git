@@ -381,17 +381,50 @@
 
     // --- 2. ECONOMY ---
     const Economy = {
-        data: { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE',
-            passActive: false, passDays: 0, lastPassClaim: 0 },
+        data: { 
+            aurum: 50, 
+            energy: 0, 
+            unlockedTrail: false, 
+            unlockedMagnet: false, 
+            unlockedSkins: [], 
+            equippedSkin: 'default', 
+            hasRevive: false, 
+            tutorialSeen: false, 
+            pilotName: "", 
+            controlMode: 'SWIPE',
+            passActive: false, 
+            passDays: 0, 
+            lastPassClaim: 0 
+        },
         init() {
-            try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
+            try { 
+                const saved = localStorage.getItem('vyraData'); 
+                if(saved) this.data = JSON.parse(saved); 
+            } catch (e) { this.resetSave(); }
+
+            // --- CRITICAL FIX: MIGRATION FOR OLD SAVES ---
+            // If these values are missing in the save file, add them now.
             if(typeof this.data.energy === 'undefined') this.data.energy = 0;
+            if(typeof this.data.unlockedMagnet === 'undefined') this.data.unlockedMagnet = false;
+            if(typeof this.data.hasRevive === 'undefined') this.data.hasRevive = false;
+            if(typeof this.data.unlockedSkins === 'undefined') this.data.unlockedSkins = []; // Fixes the .includes crash
+            if(typeof this.data.equippedSkin === 'undefined') this.data.equippedSkin = 'default';
             if(typeof this.data.passActive === 'undefined') { this.data.passActive = false; this.data.passDays = 0; this.data.lastPassClaim = 0; }
+            
             this.checkDailyPass();
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE', passActive: false, passDays: 0, lastPassClaim: 0 }; this.save(); alert("Data Reset."); } },
+        
+        resetSave() { 
+            if(confirm("⚠ WARNING: Reset ALL data?")) { 
+                this.data = { aurum: 50, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE', passActive: false, passDays: 0, lastPassClaim: 0 }; 
+                this.save(); 
+                alert("Data Reset.");
+                location.reload(); // Reload to clear any glitchy state
+            }
+        },
+        
         setControls(mode) { this.data.controlMode = mode; this.save(); },
         
         checkDailyPass() {
@@ -409,6 +442,9 @@
         },
 
         updateUI() {
+            // Safe check for elements before trying to update them
+            if(!document.getElementById('menu-aurum')) return;
+
             document.getElementById('menu-aurum').innerText = this.data.aurum;
             document.getElementById('menu-energy').innerText = this.data.energy;
             document.getElementById('hud-wallet-val').innerText = State.runEnergy; 
@@ -418,26 +454,28 @@
             this.updateButton('price-magnet', 6, this.data.unlockedMagnet, "INSTALLED", false, 'aurum');
             this.updateButton('price-trail', 5, this.data.unlockedTrail, "OWNED", false, 'aurum');
             
-            // Skin Logic
             this.updateSkinButton('price-skin-shadow', 8, 'shadow');
             this.updateSkinButton('price-skin-gold', 30, 'gold');
             
             // Pass UI
             const passBtn = document.getElementById('btn-pass');
             const passDesc = document.getElementById('pass-desc');
-            if(this.data.passActive) {
-                passBtn.style.borderColor = '#00ff00';
-                passDesc.innerText = `ACTIVE: ${this.data.passDays} DAYS LEFT`;
-                passDesc.style.color = '#00ff00';
-            } else {
-                passBtn.style.borderColor = '';
-                passDesc.innerText = "5 + 2 Daily (30d)";
-                passDesc.style.color = '#aaa';
+            if(passBtn && passDesc) {
+                if(this.data.passActive) {
+                    passBtn.style.borderColor = '#00ff00';
+                    passDesc.innerText = `ACTIVE: ${this.data.passDays} DAYS LEFT`;
+                    passDesc.style.color = '#00ff00';
+                } else {
+                    passBtn.style.borderColor = '';
+                    passDesc.innerText = "5 + 2 Daily (30d)";
+                    passDesc.style.color = '#aaa';
+                }
             }
 
             document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('toggle-buttons').className = this.data.controlMode === 'BUTTONS' ? 'toggle-btn active' : 'toggle-btn';
         },
+        
         updateButton(id, cost, isOwned, ownedText, isEquipped, type) {
             const el = document.getElementById(id); if(!el) return;
             if (isEquipped) { el.innerText = "EQUIPPED"; el.style.color = "#00ff00"; return; }
@@ -448,13 +486,66 @@
                 el.style.color = currency >= cost ? (type==='energy' ? "#00ffff" : "#ffd700") : "#555"; 
             }
         },
+
         updateSkinButton(id, cost, skinName) {
             const el = document.getElementById(id); if(!el) return;
-            const owned = this.data.unlockedSkins.includes(skinName);
+            // Safety check for unlockedSkins array
+            const owned = this.data.unlockedSkins && this.data.unlockedSkins.includes(skinName);
+            
             if (this.data.equippedSkin === skinName) { el.innerText = "EQUIPPED"; el.style.color = "#00ff00"; }
-            else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; } // No onclick here anymore, handled by handleSkinAction
+            else if (owned) { el.innerText = "EQUIP"; el.style.color = "#fff"; el.parentElement.onclick = () => Economy.handleSkinAction(skinName, 0); }
             else { el.innerText = `${cost} AURUM`; el.style.color = this.data.aurum >= cost ? "#ffd700" : "#555"; }
         },
+
+        // ACTIONS
+        buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
+        buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 10) { this.data.aurum -= 10; this.data.hasRevive = true; this.save(); }},
+        buyMagnet() { if (!this.data.unlockedMagnet && this.data.aurum >= 6) { this.data.aurum -= 6; this.data.unlockedMagnet = true; this.save(); }},
+        buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 5) { this.data.aurum -= 5; this.data.unlockedTrail = true; this.save(); }},
+        
+        handleSkinAction(skinName, cost) {
+            if (this.data.unlockedSkins.includes(skinName)) {
+                this.equipSkin(skinName);
+                alert("SKIN EQUIPPED");
+            } else {
+                if (this.data.aurum >= cost) {
+                    this.data.aurum -= cost;
+                    this.data.unlockedSkins.push(skinName);
+                    this.equipSkin(skinName);
+                    alert("PURCHASE SUCCESSFUL: SKIN EQUIPPED");
+                } else {
+                    alert("INSUFFICIENT FUNDS");
+                }
+            }
+        },
+        equipSkin(skinName) { 
+            this.data.equippedSkin = skinName; 
+            this.save();
+            this.updateUI(); 
+        },
+        
+        refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 1; this.save(); alert("Refined 1000 Energy into 1 Aurum!"); }},
+        
+        buyPack(amount, priceStr) { 
+            if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { 
+                setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); 
+            }
+        },
+        
+        buyPass() {
+            if(this.data.passActive) { alert("Pass already active!"); return; }
+            if(confirm("Purchase 10 MB PASS for $4.99?")) {
+                setTimeout(() => {
+                    this.data.aurum += 5;
+                    this.data.passActive = true;
+                    this.data.passDays = 30;
+                    this.data.lastPassClaim = Date.now();
+                    this.save();
+                    alert("PASS ACTIVATED: +5 AURUM INITIAL DROP");
+                }, 500);
+            }
+        }
+    };
         // ACTIONS
         buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
         buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 10) { this.data.aurum -= 10; this.data.hasRevive = true; this.save(); }},
