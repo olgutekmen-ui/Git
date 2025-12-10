@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vyra: Neo-Seoul Grid Run (v6.2 Golden Valkyrie)</title>
+    <title>Vyra: Neo-Seoul Grid Run (v6.4 Daily Pass)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -67,6 +67,8 @@
         .shop-item:hover { border-color: #00ffff; transform: translateY(-3px); }
         .shop-item.premium { border-color: #ffd700; }
         .shop-item.premium:hover { border-color: #fff; box-shadow: 0 0 15px #ffd700; }
+        .shop-item.subscription { border-color: #ff00ff; }
+        .shop-item.subscription:hover { border-color: #fff; box-shadow: 0 0 15px #ff00ff; }
 
         .item-icon { font-size: 30px; margin-bottom: 5px; }
         .item-name { font-size: 12px; font-weight: bold; color: #fff; }
@@ -216,14 +218,14 @@
                 <div class="shop-item premium" id="btn-revive" onclick="Economy.buyRevive()">
                     <div class="item-icon">💖</div>
                     <div class="item-name">NANOBOT HEART</div>
-                    <div class="price-tag cost-aurum" id="price-revive">1000 AURUM</div>
+                    <div class="price-tag cost-aurum" id="price-revive">10 AURUM</div>
                     <div class="item-desc">Auto-Revive (1x)</div>
                 </div>
                 <div class="shop-item" id="btn-refine" onclick="Economy.refineEnergy()">
                     <div class="item-icon">♻️</div>
                     <div class="item-name">REFINERY</div>
                     <div class="price-tag cost-energy">1000 ENERGY</div>
-                    <div class="item-desc">Get 10 Aurum</div>
+                    <div class="item-desc">Get 1 Aurum</div>
                 </div>
             </div>
             
@@ -232,48 +234,54 @@
                  <div class="shop-item premium" id="btn-magnet" onclick="Economy.buyMagnet()">
                     <div class="item-icon">🧲</div>
                     <div class="item-name">DATA SIPHON</div>
-                    <div class="price-tag cost-aurum" id="price-magnet">600 AURUM</div>
+                    <div class="price-tag cost-aurum" id="price-magnet">6 AURUM</div>
                     <div class="item-desc">Auto-Collect Orbs</div>
                 </div>
                 <div class="shop-item premium" id="btn-skin-shadow" onclick="Economy.buySkin('shadow')">
                     <div class="item-icon">🥷</div>
                     <div class="item-name">SHADOW OPS</div>
-                    <div class="price-tag cost-aurum" id="price-skin-shadow">800 AURUM</div>
+                    <div class="price-tag cost-aurum" id="price-skin-shadow">8 AURUM</div>
                     <div class="item-desc">Stealth Suit</div>
                 </div>
                 <div class="shop-item premium" id="btn-skin-gold" onclick="Economy.buySkin('gold')">
                     <div class="item-icon">🌟</div>
                     <div class="item-name">VALKYRIE</div>
-                    <div class="price-tag cost-aurum" id="price-skin-gold">2500 AURUM</div>
+                    <div class="price-tag cost-aurum" id="price-skin-gold">30 AURUM</div>
                     <div class="item-desc">Solid Gold</div>
                 </div>
                  <div class="shop-item premium" id="btn-trail" onclick="Economy.buyTrail()">
                     <div class="item-icon">✨</div>
                     <div class="item-name">NEON AURA</div>
-                    <div class="price-tag cost-aurum" id="price-trail">500 AURUM</div>
+                    <div class="price-tag cost-aurum" id="price-trail">5 AURUM</div>
                     <div class="item-desc">Cyber Aura FX</div>
                 </div>
             </div>
 
-            <h3>NEO-BANK (GET AURUM)</h3>
+            <h3>NEO-BANK (DATA PACKS)</h3>
             <div class="shop-container">
-                <div class="shop-item real-money" onclick="Economy.buyPack(100, '$0.99')">
+                <div class="shop-item real-money" onclick="Economy.buyPack(2, '$1.99')">
                     <img src="assets/images/aurum.png" style="width:30px; margin-bottom:5px;">
-                    <div class="item-name">POUCH</div>
-                    <div class="item-desc">100 Aurum</div>
-                    <div class="price-tag cost-real">$0.99</div>
+                    <div class="item-name">1 MB CACHE</div>
+                    <div class="item-desc">2 Aurum</div>
+                    <div class="price-tag cost-real">$1.99</div>
                 </div>
-                <div class="shop-item real-money" onclick="Economy.buyPack(550, '$4.99')">
-                    <img src="assets/images/aurum.png" style="width:40px; margin-bottom:5px;">
-                    <div class="item-name">CACHE</div>
-                    <div class="item-desc">550 Aurum</div>
+                <div class="shop-item real-money subscription" id="btn-pass" onclick="Economy.buyPass()">
+                    <img src="assets/images/aurum.png" style="width:35px; margin-bottom:5px;">
+                    <div class="item-name">10 MB PASS</div>
+                    <div class="item-desc" id="pass-desc">5 + 2 Daily (30d)</div>
                     <div class="price-tag cost-real">$4.99</div>
                 </div>
-                <div class="shop-item real-money" onclick="Economy.buyPack(1200, '$9.99')">
-                    <img src="assets/images/aurum.png" style="width:50px; margin-bottom:5px;">
-                    <div class="item-name">VAULT</div>
-                    <div class="item-desc">1200 Aurum</div>
+                <div class="shop-item real-money" onclick="Economy.buyPack(12, '$9.99')">
+                    <img src="assets/images/aurum.png" style="width:40px; margin-bottom:5px;">
+                    <div class="item-name">100 MB DATA</div>
+                    <div class="item-desc">12 Aurum</div>
                     <div class="price-tag cost-real">$9.99</div>
+                </div>
+                <div class="shop-item real-money" onclick="Economy.buyPack(75, '$49.99')">
+                    <img src="assets/images/aurum.png" style="width:50px; margin-bottom:5px;">
+                    <div class="item-name">1 TB DUMP</div>
+                    <div class="item-desc">75 Aurum</div>
+                    <div class="price-tag cost-real">$49.99</div>
                 </div>
             </div>
 
@@ -360,7 +368,7 @@
         isPlaying: false, isPaused: false, score: 0, distance: 0, flowMultiplier: 1.0, flowCharge: 0,
         isFlowState: false, gameSpeed: 5.0, runEnergy: 0, runAurum: 0,
         isTurbo: false, baseSpeed: 5.0,
-        LANE_WIDTH_BASE: 90, PLAYER_Z_DEPTH: 100,
+        LANE_WIDTH_BASE: 0, PLAYER_Z_DEPTH: 100,
         player: { lane: 1, state: 'RUN', y: 0, dy: 0, jumpCount: 0, invulnerable: false },
         activeBoosts: { shield: false }, shieldAvailable: false,
         obstacles: [], particles: [], texts: [], beatScale: 1.0,
@@ -375,33 +383,59 @@
 
     // --- 2. ECONOMY ---
     const Economy = {
-        data: { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' },
+        data: { aurum: 5, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE',
+            passActive: false, passDays: 0, lastPassClaim: 0 },
         init() {
             try { const saved = localStorage.getItem('vyraData'); if(saved) this.data = JSON.parse(saved); } catch (e) { this.resetSave(); }
             if(typeof this.data.energy === 'undefined') this.data.energy = 0;
-            // Defaults
-            if(typeof this.data.unlockedMagnet === 'undefined') this.data.unlockedMagnet = false;
-            if(typeof this.data.hasRevive === 'undefined') this.data.hasRevive = false;
-            if(typeof this.data.unlockedSkins === 'undefined') this.data.unlockedSkins = [];
+            if(typeof this.data.passActive === 'undefined') { this.data.passActive = false; this.data.passDays = 0; this.data.lastPassClaim = 0; }
+            this.checkDailyPass();
             this.updateUI();
         },
         save() { localStorage.setItem('vyraData', JSON.stringify(this.data)); this.updateUI(); },
-        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 10, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE' }; this.save(); alert("Data Reset."); } },
+        resetSave() { if(confirm("⚠ WARNING: Reset ALL data?")) { this.data = { aurum: 5, energy: 0, unlockedTrail: false, unlockedMagnet: false, unlockedSkins: [], equippedSkin: 'default', hasRevive: false, tutorialSeen: false, pilotName: "", controlMode: 'SWIPE', passActive: false, passDays: 0, lastPassClaim: 0 }; this.save(); alert("Data Reset."); } },
         setControls(mode) { this.data.controlMode = mode; this.save(); },
+        
+        checkDailyPass() {
+            if(this.data.passActive && this.data.passDays > 0) {
+                let now = Date.now();
+                if(now - this.data.lastPassClaim > 86400000) { // 24 hours
+                    this.data.aurum += 2;
+                    this.data.passDays--;
+                    this.data.lastPassClaim = now;
+                    if(this.data.passDays <= 0) this.data.passActive = false;
+                    this.save();
+                    alert("DAILY SUPPLY DROP: +2 AURUM RECEIVED!");
+                }
+            }
+        },
+
         updateUI() {
             document.getElementById('menu-aurum').innerText = this.data.aurum;
             document.getElementById('menu-energy').innerText = this.data.energy;
             document.getElementById('hud-wallet-val').innerText = State.runEnergy; 
 
             this.updateButton('price-shield', 300, false, "EQUIPPED", State.activeBoosts.shield, 'energy');
-            this.updateButton('price-revive', 1000, false, "OWNED", this.data.hasRevive, 'aurum');
-            this.updateButton('price-magnet', 600, this.data.unlockedMagnet, "INSTALLED", false, 'aurum');
-            this.updateButton('price-trail', 500, this.data.unlockedTrail, "OWNED", false, 'aurum');
+            this.updateButton('price-revive', 10, false, "OWNED", this.data.hasRevive, 'aurum');
+            this.updateButton('price-magnet', 6, this.data.unlockedMagnet, "INSTALLED", false, 'aurum');
+            this.updateButton('price-trail', 5, this.data.unlockedTrail, "OWNED", false, 'aurum');
             
-            // Skin Logic
-            this.updateSkinButton('price-skin-shadow', 800, 'shadow');
-            this.updateSkinButton('price-skin-gold', 2500, 'gold');
+            this.updateSkinButton('price-skin-shadow', 8, 'shadow');
+            this.updateSkinButton('price-skin-gold', 30, 'gold');
             
+            // Pass UI
+            const passBtn = document.getElementById('btn-pass');
+            const passDesc = document.getElementById('pass-desc');
+            if(this.data.passActive) {
+                passBtn.style.borderColor = '#00ff00';
+                passDesc.innerText = `ACTIVE: ${this.data.passDays} DAYS LEFT`;
+                passDesc.style.color = '#00ff00';
+            } else {
+                passBtn.style.borderColor = '#ff00ff';
+                passDesc.innerText = "5 + 2 Daily (30d)";
+                passDesc.style.color = '#aaa';
+            }
+
             document.getElementById('toggle-swipe').className = this.data.controlMode === 'SWIPE' ? 'toggle-btn active' : 'toggle-btn';
             document.getElementById('toggle-buttons').className = this.data.controlMode === 'BUTTONS' ? 'toggle-btn active' : 'toggle-btn';
         },
@@ -424,13 +458,13 @@
         },
         // ACTIONS
         buyShield() { if (!State.activeBoosts.shield && this.data.energy >= 300) { this.data.energy -= 300; State.activeBoosts.shield = true; this.save(); }},
-        buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 1000) { this.data.aurum -= 1000; this.data.hasRevive = true; this.save(); }},
-        buyMagnet() { if (!this.data.unlockedMagnet && this.data.aurum >= 600) { this.data.aurum -= 600; this.data.unlockedMagnet = true; this.save(); }},
-        buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 500) { this.data.aurum -= 500; this.data.unlockedTrail = true; this.save(); }},
+        buyRevive() { if (!this.data.hasRevive && this.data.aurum >= 10) { this.data.aurum -= 10; this.data.hasRevive = true; this.save(); }},
+        buyMagnet() { if (!this.data.unlockedMagnet && this.data.aurum >= 6) { this.data.aurum -= 6; this.data.unlockedMagnet = true; this.save(); }},
+        buyTrail() { if (!this.data.unlockedTrail && this.data.aurum >= 5) { this.data.aurum -= 5; this.data.unlockedTrail = true; this.save(); }},
         
         buySkin(skinName) {
             if (this.data.unlockedSkins.includes(skinName)) return; 
-            let cost = (skinName === 'shadow') ? 800 : 2500;
+            let cost = (skinName === 'shadow') ? 8 : 30;
             if (this.data.aurum >= cost) {
                 this.data.aurum -= cost;
                 this.data.unlockedSkins.push(skinName);
@@ -438,8 +472,22 @@
             }
         },
         equipSkin(skinName) { this.data.equippedSkin = skinName; this.save(); },
-        refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 10; this.save(); alert("Refined 1000 Energy into 10 Aurum!"); }},
-        buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }}
+        refineEnergy() { if(this.data.energy >= 1000) { this.data.energy -= 1000; this.data.aurum += 1; this.save(); alert("Refined 1000 Energy into 1 Aurum!"); }},
+        buyPack(amount, priceStr) { if(confirm(`Purchase ${amount} Aurum for ${priceStr}?`)) { setTimeout(() => { this.data.aurum += amount; this.save(); alert("Payment Successful!"); }, 500); }},
+        
+        buyPass() {
+            if(this.data.passActive) { alert("Pass already active!"); return; }
+            if(confirm("Purchase 10 MB PASS for $4.99?")) {
+                setTimeout(() => {
+                    this.data.aurum += 5;
+                    this.data.passActive = true;
+                    this.data.passDays = 30;
+                    this.data.lastPassClaim = Date.now();
+                    this.save();
+                    alert("PASS ACTIVATED: +5 AURUM INITIAL DROP");
+                }, 500);
+            }
+        }
     };
 
     // --- 3. ASSETS & AUDIO ---
@@ -683,8 +731,6 @@
         document.getElementById('gameover-layer').style.display = 'flex';
         document.getElementById('gameover-stats').innerHTML = `SCORE: ${Math.floor(State.score)}<br>DISTANCE: ${Math.floor(State.distance)}m<br><span style="color:#00ffff">COLLECTED: ${State.runEnergy} </span> <img src="assets/images/energy.png" style="width:20px;vertical-align:middle;">`;
     }
-
-    function returnToMenu() { document.getElementById('gameover-layer').style.display = 'none'; document.getElementById('menu-layer').style.display = 'flex'; Economy.updateUI(); }
 
     function triggerBeat() {
         const beatBar = document.getElementById('beat-bar'); if(beatBar) { beatBar.classList.add('beat-hit'); setTimeout(() => beatBar.classList.remove('beat-hit'), 100); }
